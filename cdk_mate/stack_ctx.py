@@ -11,11 +11,10 @@ import typing as T
 import dataclasses
 
 import aws_cdk as cdk
-from func_args import NOTHING
 from boto_session_manager import BotoSesManager
 
 from .cli.cli_cmd import Synth, Diff, Deploy, Destroy
-from .arg import T_KWARGS
+from .arg import NA, T_KWARGS
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from pathlib_mate import T_PATH_ARG
@@ -152,7 +151,7 @@ class StackCtx:
         print(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Deploy(
             stacks=[self.construct_id],
-            require_approval=NOTHING if prompt else "never",
+            require_approval=NA if prompt else "never",
             **kwargs,
         )
         return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
@@ -175,7 +174,7 @@ class StackCtx:
         print(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Destroy(
             stacks=[self.construct_id],
-            force=NOTHING if prompt else True,
+            force=NA if prompt else True,
             **kwargs,
         )
         return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
@@ -224,7 +223,7 @@ def cdk_deploy_many(
         print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
     cmd = Deploy(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
-        require_approval=NOTHING if prompt else "never",
+        require_approval=NA if prompt else "never",
         **kwargs,
     )
     return cmd.run(bsm=stack_ctx_list[0].bsm, dir_cdk=dir_cdk)
@@ -250,7 +249,7 @@ def cdk_destroy_many(
         print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
     cmd = Destroy(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
-        force=NOTHING if prompt else True,
+        force=NA if prompt else True,
         **kwargs,
     )
     return cmd.run(bsm=stack_ctx_list[0].bsm, dir_cdk=dir_cdk)
