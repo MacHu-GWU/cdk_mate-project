@@ -10,6 +10,7 @@ def test():
     _ = api.cli.destroy
     _ = api.StackCtx
     _ = api.to_camel
+    _ = api.to_slug
 
 
 if __name__ == "__main__":

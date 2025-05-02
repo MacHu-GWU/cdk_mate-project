@@ -15,6 +15,13 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
-0.1.1 (1970-01-01)
+0.1.1 (2025-05-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - First release
+- Add the following public APIs:
+    - ``cdk_mate.api.cli.synth``
+    - ``cdk_mate.api.cli.deploy``
+    - ``cdk_mate.api.cli.destroy``
+    - ``cdk_mate.api.StackCtx``
+    - ``cdk_mate.api.to_camel``
+    - ``cdk_mate.api.to_slug``
