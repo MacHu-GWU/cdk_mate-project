@@ -1,4 +1,2 @@
-Sample RestructuredText Document
+Introduction
 ==============================================================================
-
-This is a sample rst document.

@@ -5,6 +5,11 @@ from cdk_mate import api
 
 def test():
     _ = api
+    _ = api.cli.synth
+    _ = api.cli.deploy
+    _ = api.cli.destroy
+    _ = api.StackCtx
+    _ = api.to_camel
 
 
 if __name__ == "__main__":

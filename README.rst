@@ -50,7 +50,7 @@ Welcome to ``cdk_mate`` Documentation
 .. image:: https://cdk-mate.readthedocs.io/en/latest/_static/cdk_mate-logo.png
     :target: https://cdk-mate.readthedocs.io/en/latest/
 
-Documentation for ``cdk_mate``.
+CDK Mate is a comprehensive toolkit for managing AWS CDK deployments across multiple stacks and environments with minimal boilerplate code. It provides a flexible framework for organizing CDK stacks with clear separation between stack definition and deployment concerns. Key features include a powerful stack context management system for handling different environments (dev, test, prod), Python wrappers around CDK CLI commands for automated deployments, utilities for credential management, and best practices for multi-stack project organization. The library simplifies complex infrastructure deployments by enabling consistent configuration across environments while supporting both individual stack development and full environment deployments. CDK Mate helps development teams scale their infrastructure as code implementations while maintaining clean, testable, and maintainable code architecture.
 
 
 .. _install:

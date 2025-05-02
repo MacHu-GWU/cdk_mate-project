@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from cdk_mate.tests.iac_init import app
+import os
+import pytest
+from cdk_mate.tests.iac_init import stack_enum
 
 
-def test():
-    app.synth()
+@pytest.mark.skipif("CI" in os.environ, reason="Skip test in CI")
+def test_iac_init():
+    _ = stack_enum.stack1_dev
+    _ = stack_enum.stack1_test
+    _ = stack_enum.stack2_dev
+    _ = stack_enum.stack2_test
+
+    stack_enum.app.synth()
 
 
 if __name__ == "__main__":

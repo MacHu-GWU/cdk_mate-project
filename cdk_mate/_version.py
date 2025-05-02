@@ -3,7 +3,7 @@
 # based on the content in pyproject.toml file
 
 __version__ = "0.1.1"
-__short_description__ = "AWS CDK mate."
+__short_description__ = "A comprehensive Python toolkit for simplifying AWS CDK deployment workflows across multiple stacks"
 __license__ = "MIT"
 __author__ = "Sanhe Hu"
 __author_email__ = "husanhe@gmail.com"

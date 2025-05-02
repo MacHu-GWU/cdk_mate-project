@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
-from cdk_mate.tests.iac_init import app
+from cdk_mate.tests.iac_init import stack_enum
 
-app.synth()
+_ = stack_enum.stack1_dev
+_ = stack_enum.stack1_test
+_ = stack_enum.stack2_dev
+_ = stack_enum.stack2_test
+
+stack_enum.app.synth()
