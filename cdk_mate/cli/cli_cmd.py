@@ -24,8 +24,8 @@ if T.TYPE_CHECKING:  # pragma: no cover
 
 
 def synth(
-    bsm: "BotoSesManager",
-    dir_cdk: "T_PATH_ARG",
+    bsm: T.Optional["BotoSesManager"] = None,
+    dir_cdk: T.Optional["T_PATH_ARG"] = None,
     # --- command options ---
     exclusively: bool = NOTHING,
     quiet: bool = NOTHING,
@@ -62,9 +62,11 @@ def synth(
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-synth.html
     """
     args = ["cdk", "synth"]
+    # Process command options
     process_bool_arg("exclusively", exclusively, args)
     process_bool_arg("quiet", quiet, args)
     process_bool_arg("validation", validation, args)
+    # Process global options
     process_global_options(
         args=args,
         app=app,
@@ -98,8 +100,8 @@ def synth(
 
 
 def deploy(
-    bsm: "BotoSesManager",
-    dir_cdk: "T_PATH_ARG",
+    bsm: T.Optional["BotoSesManager"] = None,
+    dir_cdk: T.Optional["T_PATH_ARG"] = None,
     stacks: list[str] = NOTHING,
     # --- command options ---
     all: bool = NOTHING,
@@ -225,4 +227,87 @@ def deploy(
         version_reporting=version_reporting,
     )
 
+    return run_cdk_command(bsm=bsm, dir_cdk=dir_cdk, args=args)
+
+
+def destroy(
+    bsm: T.Optional["BotoSesManager"] = None,
+    dir_cdk: T.Optional["T_PATH_ARG"] = None,
+    stacks: list[str] = NOTHING,
+    # --- command options ---
+    all: bool = NOTHING,
+    exclusively: bool = NOTHING,
+    force: bool = NOTHING,
+    # --- global options ---
+    app: str = NOTHING,
+    asset_metadata: bool = NOTHING,
+    builder: str = NOTHING,
+    ca_bundle_path: str = NOTHING,
+    ci: bool = NOTHING,
+    context: dict[str, str] = NOTHING,
+    debug: bool = NOTHING,
+    ec2creds: bool = NOTHING,
+    help: bool = NOTHING,
+    ignore_errors: bool = NOTHING,
+    json: bool = NOTHING,
+    lookups: bool = NOTHING,
+    no_color: bool = NOTHING,
+    notices: bool = NOTHING,
+    output: str = NOTHING,
+    path_metadata: bool = NOTHING,
+    plugin: list[str] = NOTHING,
+    profile: str = NOTHING,
+    proxy: str = NOTHING,
+    role_arn: str = NOTHING,
+    staging: bool = NOTHING,
+    strict: bool = NOTHING,
+    trace: bool = NOTHING,
+    verbose: int = NOTHING,
+    version: bool = NOTHING,
+    version_reporting: bool = NOTHING,
+):
+    """
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html
+    """
+    args = ["cdk", "destroy"]
+
+    # Add stack IDs if provided
+    if stacks is not NOTHING and stacks:
+        args.extend(stacks)
+
+    # Process command options
+    process_bool_arg("all", all, args)
+    process_bool_arg("exclusively", exclusively, args)
+    process_bool_arg("force", force, args)
+
+    # Process global options
+    process_global_options(
+        args=args,
+        app=app,
+        asset_metadata=asset_metadata,
+        builder=builder,
+        ca_bundle_path=ca_bundle_path,
+        ci=ci,
+        context=context,
+        debug=debug,
+        ec2creds=ec2creds,
+        help=help,
+        ignore_errors=ignore_errors,
+        json=json,
+        lookups=lookups,
+        no_color=no_color,
+        notices=notices,
+        output=output,
+        path_metadata=path_metadata,
+        plugin=plugin,
+        profile=profile,
+        proxy=proxy,
+        role_arn=role_arn,
+        staging=staging,
+        strict=strict,
+        trace=trace,
+        verbose=verbose,
+        version=version,
+        version_reporting=version_reporting,
+    )
     return run_cdk_command(bsm=bsm, dir_cdk=dir_cdk, args=args)

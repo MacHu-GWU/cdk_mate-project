@@ -139,7 +139,16 @@ def process_global_options(
     return args
 
 
-def run_cmd(
+def run_cmd_v1(
+    args: list[str],
+) -> subprocess.CompletedProcess:
+    cmd = " ".join(args)
+    print(f"--- Run command ---")
+    print(cmd)
+    return subprocess.run(args, check=True)
+
+
+def run_cmd_v2(
     args: list[str],
     show_output: bool = True,
 ) -> subprocess.CompletedProcess:
@@ -155,11 +164,16 @@ def run_cmd(
         )
         if show_output:
             print(result.stdout)
+            print(result.stderr)
         return result
     except subprocess.CalledProcessError as e:
         print(f"Error code: {e.returncode}")
         print(f"Error message:\n{e.stderr}")
         raise e
+
+
+run_cmd = run_cmd_v1
+# run_cmd = run_cmd_v2
 
 
 def run_cdk_command(
@@ -172,6 +186,12 @@ def run_cdk_command(
     """
     with contextlib.ExitStack() as stack:
         bsm_tmp = None if bsm is None else stack.enter_context(bsm.awscli())
+        if bsm is not None:
+            print("--- Using boto session ---")
+            bsm.print_who_am_i(masked=True)
+        if dir_cdk is not None:
+            print(f"---Using CDK directory ---")
+            print(dir_cdk)
         if dir_cdk is None:
             tmp_cwd = None
         else:

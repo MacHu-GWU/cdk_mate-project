@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
+
 import aws_cdk as cdk
 from constructs import Construct
 
