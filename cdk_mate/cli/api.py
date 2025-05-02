@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from .cli_cmd import synth
-from .cli_cmd import deploy
-from .cli_cmd import destroy
+from .cli_cmd import Bootstrap
+from .cli_cmd import Synth
+from .cli_cmd import Diff
+from .cli_cmd import Deploy
+from .cli_cmd import Destroy

@@ -5,10 +5,15 @@ from cdk_mate import api
 
 def test():
     _ = api
-    _ = api.cli.synth
-    _ = api.cli.deploy
-    _ = api.cli.destroy
+    _ = api.cli.Bootstrap
+    _ = api.cli.Synth
+    _ = api.cli.Diff
+    _ = api.cli.Deploy
+    _ = api.cli.Destroy
     _ = api.StackCtx
+    _ = api.cdk_diff_many
+    _ = api.cdk_deploy_many
+    _ = api.cdk_destroy_many
     _ = api.to_camel
     _ = api.to_slug
 

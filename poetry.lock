@@ -804,22 +804,6 @@ files = [
 devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benchmark", "pytest-cache", "validictory"]
 
 [[package]]
-name = "func-args"
-version = "0.1.1"
-description = "Bring in sentinel ``NOTHING`` into your Python function arguments."
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "func_args-0.1.1-py2.py3-none-any.whl", hash = "sha256:8640ffee0ae20dafa775bd012ced8b20835200bdb0e5847b9ef004acbf553993"},
-    {file = "func_args-0.1.1.tar.gz", hash = "sha256:4815248811505c6bb75fbc03059448323a4b7e58fa6fa17b525c1dae75a7565b"},
-]
-
-[package.extras]
-docs = ["docfly (==1.0.2)", "furo (==2021.8.31)", "rstobj (==0.0.7)", "sphinx (==4.3.0)", "sphinx-copybutton (==0.4.0)", "sphinx-inline-tabs (==2021.8.17b10)", "sphinx-jinja (==1.1.1)"]
-tests = ["pytest", "pytest-cov"]
-
-[[package]]
 name = "furo"
 version = "2024.8.6"
 description = "A clean customisable Sphinx documentation theme."
@@ -2838,4 +2822,4 @@ test = ["pytest", "pytest-cov"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "e37733c7554fc8815a3da0450c1f66fb1a822e921a5d6e44baa45798c511d2dc"
+content-hash = "acd1faab63eddc141b2b4202784327c5348415cbd84264523c523569905d9746"

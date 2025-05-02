@@ -18,9 +18,11 @@ CLI Command Modules
 ------------------------------------------------------------------------------
 The CLI commands are implemented in :mod:`cdk_mate.cli.cli_cmd`, providing function wrappers for common CDK operations:
 
-- :func:`cdk_mate.cli.cli_cmd.synth` - Synthesize CloudFormation templates
-- :func:`cdk_mate.cli.cli_cmd.deploy` - Deploy stacks to AWS
-- :func:`cdk_mate.cli.cli_cmd.destroy` - Remove stacks from AWS
+- :class:`cdk_mate.cli.cli_cmd.Bootstrap` - Prepare an AWS environment for CDK deployments
+- :class:`cdk_mate.cli.cli_cmd.Synth` - Synthesize CloudFormation templates
+- :class:`cdk_mate.cli.cli_cmd.Diff` - Compare deployed stacks with current state
+- :class:`cdk_mate.cli.cli_cmd.Deploy` - Deploy stacks to AWS
+- :class:`cdk_mate.cli.cli_cmd.Destroy` - Remove stacks from AWS
 
 .. dropdown:: cli_cmd.py
 
@@ -38,7 +40,9 @@ The CLI wrapper integrates with Boto Session Manager to provide enhanced credent
    uses the specified AWS credentials.
 2. **Explicit Account Selection**: This approach guarantees deployment to the correct AWS account by overriding the default credential chain, providing more reliability than profile-based selection.
 
-Example::
+Example:
+
+.. code-block:: python
 
     from boto_session_manager import BotoSesManager
     import cdk_mate.api as cdk_mate
@@ -50,11 +54,10 @@ Example::
     )
 
     # Deploy using this session
-    cdk_mate.cli.deploy(
-        bsm=bsm,
+    cdk_mate.cli.Deploy(
         stacks=["MyStack"],
         require_approval="never"
-    )
+    ).run(bsm=bsm)
 
 
 Directory Context Management
@@ -69,14 +72,35 @@ Example::
     import cdk_mate.api as cdk_mate
 
     # Synthesize from any location
-    cdk_mate.cli.synth(dir_cdk="/path/to/my/cdk/project")
+    cdk_mate.cli.Synth().run(dir_cdk="/path/to/my/cdk/project")
 
     # Using a file path (will use the file's directory)
-    cdk_mate.cli.synth(dir_cdk="/path/to/my/cdk/project/stack1_app.py")
+    cdk_mate.cli.Synth().run(dir_cdk="/path/to/my/cdk/project/stack1_app.py")
 
 
 Usage Examples
 ------------------------------------------------------------------------------
+
+
+Bootstrapping an AWS Environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Prepare an AWS environment for CDK deployments:
+
+.. code-block:: python
+
+    from boto_session_manager import BotoSesManager
+    import cdk_mate.cli as cdk_mate
+
+    bsm = BotoSesManager(
+        profile_name="dev",
+        region_name="us-east-1"
+    )
+
+    cdk_mate.cli.Bootstrap(
+        aws_environment="123456789012/us-east-1",
+        bootstrap_bucket_name="my-cdk-bootstrap-bucket",
+        qualifier="hnb659fds"  # Custom qualifier
+    ).run(bsm=bsm)
 
 
 Basic Synthesis
@@ -87,7 +111,29 @@ Synthesize a CDK application without changing directories:
 
     import cdk_mate.api as cdk_mate
 
-    cdk_mate.cli.synth(dir_cdk="/path/to/cdk/project")
+    cdk_mate.cli.Synth().run(dir_cdk="/path/to/cdk/project")
+
+
+Comparing Stacks with Diff
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compare local CDK stacks with deployed versions:
+
+.. code-block:: python
+
+    import cdk_mate.cli as cdk_mate
+
+    # Basic diff
+    cdk_mate.cli.Diff(
+        stacks=["MyStack"]
+    ).run(dir_cdk="/path/to/cdk/project")
+
+    # Advanced diff options
+    cdk_mate.cli.Diff(
+        stacks=["MyStack"],
+        quiet=True,
+        security_only=True,
+        change_set=False  # Faster but less accurate diff
+    ).run(dir_cdk="/path/to/cdk/project")
 
 
 Deploying with Specific Credentials
@@ -104,11 +150,12 @@ Deploy a stack using explicit AWS credentials:
         region_name="us-east-1"
     )
 
-    cdk_mate.cli.deploy(
-        bsm=bsm,
-        dir_cdk="/path/to/cdk/project",
+    cdk_mate.cli.Deploy(
         stacks=["MyStack"],
         require_approval="never"
+    ).run(
+        bsm=bsm,
+        dir_cdk="/path/to/cdk/project",
     )
 
 
@@ -120,10 +167,12 @@ Remove multiple stacks with forced deletion:
 
     import cdk_mate.api as cdk_mate
 
-    cdk_mate.cli.destroy(
-        dir_cdk="/path/to/cdk/project",
+    cdk_mate.cli.Destroy(
         stacks=["Stack1", "Stack2"],
         force=True
+    ).run(
+        bsm=bsm,
+        dir_cdk="/path/to/cdk/project",
     )
 
 
