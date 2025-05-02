@@ -23,9 +23,12 @@ if T.TYPE_CHECKING:  # pragma: no cover
     from pathlib_mate import T_PATH_ARG
 
 
+T_NOTHING = T.Literal[NOTHING]
+
+
 def process_value_arg(
     name: str,
-    value: T.Union[NOTHING, T.Any],
+    value: T.Union[T_NOTHING, T.Any],
     args: list[str],
 ):
     """
@@ -53,7 +56,7 @@ def process_value_arg(
 
 def process_bool_arg(
     name: str,
-    value: T.Union[NOTHING, bool],
+    value: T.Union[T_NOTHING, bool],
     args: list[str],
 ):
     """
@@ -74,7 +77,7 @@ def process_bool_arg(
 
 def process_key_value_arg(
     name: str,
-    value: T.Union[NOTHING, dict[str, str]],
+    value: T.Union[T_NOTHING, dict[str, str]],
     args: list[str],
 ):
     """
@@ -97,7 +100,7 @@ def process_key_value_arg(
 
 def process_array_arg(
     name: str,
-    value: T.Union[NOTHING, list[str]],
+    value: T.Union[T_NOTHING, list[str]],
     args: list[str],
 ):
     """
@@ -120,7 +123,7 @@ def process_array_arg(
 
 def process_count_arg(
     name: str,
-    value: T.Union[NOTHING, int],
+    value: T.Union[T_NOTHING, int],
     args: list[str],
 ):
     """
