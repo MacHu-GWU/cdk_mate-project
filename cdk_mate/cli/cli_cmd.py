@@ -1,7 +1,18 @@
 # -*- coding: utf-8 -*-
 
 """
+AWS CDK CLI Command Wrapper
 
+Provides convenient Python wrappers for AWS CDK CLI commands (synth, deploy, destroy, etc ...)
+with comprehensive option handling and flexible execution support.
+
+.. code-block:: python
+
+    deploy(
+        stacks=["MyStack"],
+        profile="my_aws_profile",
+        require_approval="never"
+    )
 """
 
 import typing as T
@@ -13,7 +24,6 @@ from .cli_utils import (
     process_bool_arg,
     process_key_value_arg,
     process_array_arg,
-    process_count_arg,
     process_global_options,
     run_cdk_command,
 )
@@ -59,6 +69,8 @@ def synth(
     version_reporting: bool = NOTHING,
 ):
     """
+    Synthesize AWS CDK stacks into CloudFormation templates with comprehensive configuration options.
+
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-synth.html
     """
     args = ["cdk", "synth"]
@@ -156,6 +168,8 @@ def deploy(
     version_reporting: bool = NOTHING,
 ):
     """
+    Deploy AWS CDK stacks to AWS infrastructure with granular control over deployment parameters.
+
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html
     """
     args = ["cdk", "deploy"]
@@ -267,6 +281,8 @@ def destroy(
     version_reporting: bool = NOTHING,
 ):
     """
+    Safely remove AWS CDK stacks from infrastructure with flexible destruction options.
+
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html
     """
     args = ["cdk", "destroy"]

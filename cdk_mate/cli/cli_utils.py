@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+"""
+Utility Functions for AWS CDK CLI Command Processing
+
+This module provides a set of utility functions to streamline and standardize
+the processing of AWS CDK CLI command arguments, command execution, and
+environment management.
+"""
+
 import typing as T
 import subprocess
 import contextlib
@@ -20,6 +28,22 @@ def process_value_arg(
     value: T.Union[NOTHING, T.Any],
     args: list[str],
 ):
+    """
+    Process a standard value argument for CLI commands.
+
+    Example::
+
+        name = "stack"
+        value = "my-stack"
+        # will be encoded as
+        "--stack my-stack"
+
+    :param name: The name of the argument (without '--' prefix)
+    :param value: The value of the argument, can be NOTHING or any value
+    :param args: The list of arguments to append the processed argument to
+
+    :return: None, modifies the args list in-place
+    """
     if value is NOTHING:
         return
     if value:
@@ -32,6 +56,16 @@ def process_bool_arg(
     value: T.Union[NOTHING, bool],
     args: list[str],
 ):
+    """
+    Process a boolean argument for CLI commands.
+
+    Example::
+
+        name = "help"
+        value = True
+        # will be encoded as
+        "--help"
+    """
     if value is NOTHING:
         return
     if value:
@@ -43,6 +77,16 @@ def process_key_value_arg(
     value: T.Union[NOTHING, dict[str, str]],
     args: list[str],
 ):
+    """
+    Process key-value pair arguments for CLI commands.
+
+    Example::
+
+        name = "parameter"
+        value = {"key1": "value1", "key2": "value2"}
+        # will be encoded as
+        "--parameter key1=value1 --parameter key2=value2"
+    """
     if value is NOTHING:
         return
     if value:
@@ -56,6 +100,16 @@ def process_array_arg(
     value: T.Union[NOTHING, list[str]],
     args: list[str],
 ):
+    """
+    Process array-type arguments for CLI commands.
+
+    Example::
+
+        name = "plugin"
+        value = ["plugin1", "plugin1"]
+        # will be encoded as
+        "--plugin plugin1 --plugin plugin2"
+    """
     if value is NOTHING:
         return
     if value:
@@ -69,6 +123,16 @@ def process_count_arg(
     value: T.Union[NOTHING, int],
     args: list[str],
 ):
+    """
+    Process count-based arguments for CLI commands.
+
+    Example::
+
+        name = "verbose"
+        value = 2
+        # will be encoded as
+        "--verbose --verbose"
+    """
     if value is NOTHING:
         return
     if value:
@@ -108,6 +172,9 @@ def process_global_options(
     """
     Process global options for AWS CDK CLI commands.
 
+    Applies a comprehensive set of global options to the CDK command arguments.
+    Handles various configuration and runtime options for CDK commands.
+
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd.html
     """
     process_value_arg("app", app, args)
@@ -142,6 +209,9 @@ def process_global_options(
 def run_cmd_v1(
     args: list[str],
 ) -> subprocess.CompletedProcess:
+    """
+    Run a terminal command using subprocess with standard output.
+    """
     cmd = " ".join(args)
     print(f"--- Run command ---")
     print(cmd)
@@ -153,7 +223,7 @@ def run_cmd_v2(
     show_output: bool = True,
 ) -> subprocess.CompletedProcess:
     """
-    Run terminal command with the given arguments.
+    Run a terminal command with advanced output handling.
     """
     try:
         result = subprocess.run(
@@ -182,7 +252,15 @@ def run_cdk_command(
     dir_cdk: T.Optional["T_PATH_ARG"] = None,
 ) -> subprocess.CompletedProcess:
     """
-    Run a CDK command with the given arguments.
+    Execute an AWS CDK command with optional AWS session and directory context.
+
+    :param args: List of CDK command arguments to execute
+    :param bsm: Optional Boto Session Manager for AWS credentials and context
+    :param dir_cdk: Optional directory path for executing the CDK command
+
+    :raises subprocess.CalledProcessError: If the command execution fails
+
+    :return: Completed process result from subprocess
     """
     with contextlib.ExitStack() as stack:
         bsm_tmp = None if bsm is None else stack.enter_context(bsm.awscli())

@@ -3,12 +3,12 @@
 import aws_cdk as cdk
 from constructs import Construct
 
-from .iac_define_01_everything import Stack1Mixin
+from .iac_define_01_everything import Stack2Mixin
 
 
-class Stack1(
+class Stack2(
     cdk.Stack,
-    Stack1Mixin,
+    Stack2Mixin,
 ):
     def __init__(
         self,

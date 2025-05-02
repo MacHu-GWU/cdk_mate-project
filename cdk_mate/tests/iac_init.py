@@ -3,27 +3,30 @@
 import aws_cdk as cdk
 
 from .stacks.stack1.iac_define import Stack1
-from .stack_ctx_enum import StackCtxEnum
+from .stacks.stack2.iac_define import Stack2
+
+from .stack_ctx_enum import stack_ctx_enum
 
 
 app = cdk.App()
 
+
 stack1_dev = Stack1(
     scope=app,
-    id=StackCtxEnum.stack1_dev.construct_id,
-    stack_name=StackCtxEnum.stack1_dev.stack_name,
-    env=cdk.Environment(
-        account=StackCtxEnum.stack1_dev.aws_account_id,
-        region=StackCtxEnum.stack1_dev.aws_region,
-    ),
+    **stack_ctx_enum.stack1_dev.to_stack_kwargs(),
 )
 
 stack1_test = Stack1(
     scope=app,
-    id=StackCtxEnum.stack1_test.construct_id,
-    stack_name=StackCtxEnum.stack1_test.stack_name,
-    env=cdk.Environment(
-        account=StackCtxEnum.stack1_test.aws_account_id,
-        region=StackCtxEnum.stack1_test.aws_region,
-    ),
+    **stack_ctx_enum.stack1_test.to_stack_kwargs(),
+)
+
+stack2_dev = Stack2(
+    scope=app,
+    **stack_ctx_enum.stack2_dev.to_stack_kwargs(),
+)
+
+stack2_test = Stack2(
+    scope=app,
+    **stack_ctx_enum.stack2_test.to_stack_kwargs(),
 )

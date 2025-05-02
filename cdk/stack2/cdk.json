@@ -1,5 +1,5 @@
 {
-  "app": "python3 stack1_app.py",
+  "app": "python3 stack2_app.py",
   "watch": {
     "include": [
       "**"
