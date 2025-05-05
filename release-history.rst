@@ -15,6 +15,21 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+0.1.3 (2025-05-05)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add the following public APIs:
+    - ``cdk_mate.api.cli.REQ``
+    - ``cdk_mate.api.cli.NA``
+    - ``cdk_mate.api.cli.rm_na``
+    - ``cdk_mate.api.cli.T_KWARGS``
+    - ``cdk_mate.api.cli.BaseStack``
+    - ``cdk_mate.api.cli.BaseParams``
+    - ``cdk_mate.api.cli.ConstructParams``
+    - ``cdk_mate.api.cli.StackParams``
+
+
 0.1.2 (2025-05-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

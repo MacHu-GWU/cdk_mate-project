@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 
 """
+Stack Parameter Management System for AWS CDK
 
+This module provides a type-safe, extendable parameter system for AWS CDK constructs
+and stacks using Python dataclasses. The motivation for this system is to address
+limitations when subclassing CDK constructs like cdk.Stack:
+
+1. Because cdk Python uses ``def __init__(self, ...):``, subclassing requires
+    repeating parameter definitions to maintain type hints
+2. Using ``**kwargs`` loses type information and IDE completion support
+3. Validation of required parameters is handled manually and inconsistently
 """
 
 import typing as T
@@ -16,7 +25,19 @@ from .arg import _REQUIRED, REQ, NA, rm_na, T_KWARGS
 
 @dataclasses.dataclass
 class BaseParams:
+    """
+    Base class for all parameter dataclasses with validation capabilities.
+
+    This class provides common functionality for parameter validation and conversion
+    that all parameter classes can inherit. It handles required parameter validation
+    during initialization and provides utility methods to convert parameters to
+    dictionaries.
+    """
+
     def _validate(self):
+        """
+        Validate that all required parameters are provided.
+        """
         for field in dataclasses.fields(self.__class__):
             if field.init:
                 k = field.name
@@ -28,6 +49,9 @@ class BaseParams:
 
     @classmethod
     def _split_req_opt(cls, kwargs: T_KWARGS) -> T.Tuple[T_KWARGS, T_KWARGS]:
+        """
+        Split provided kwargs into required and optional parameters.
+        """
         req_kwargs, opt_kwargs = dict(), dict()
         for field in dataclasses.fields(cls):
             if isinstance(field.default, _REQUIRED):
@@ -54,10 +78,17 @@ class BaseParams:
 
 @dataclasses.dataclass
 class ConstructParams(BaseParams):
+    """
+    Parameter dataclass for CDK Construct initialization.
+    """
+
     scope: Construct = dataclasses.field(default=REQ)
     id: str = dataclasses.field(default=REQ)
 
     def to_construct_kwargs(self) -> T_KWARGS:
+        """
+        Generate keyword arguments for CDK construct initialization.
+        """
         return rm_na(
             scope=self.scope,
             id=self.id,
@@ -66,6 +97,10 @@ class ConstructParams(BaseParams):
 
 @dataclasses.dataclass
 class StackParams(ConstructParams):
+    """
+    Parameter dataclass for CDK Stack initialization.
+    """
+
     analytics_reporting: bool = dataclasses.field(default=NA)
     cross_region_references: bool = dataclasses.field(default=NA)
     description: str = dataclasses.field(default=NA)
@@ -79,6 +114,9 @@ class StackParams(ConstructParams):
     termination_protection: bool = dataclasses.field(default=NA)
 
     def to_stack_kwargs(self) -> T_KWARGS:
+        """
+        Generate keyword arguments for CDK Stack initialization.
+        """
         return rm_na(
             scope=self.scope,
             id=self.id,

@@ -10,7 +10,11 @@ import dataclasses
 
 @dataclasses.dataclass(frozen=True)
 class _REQUIRED:
-    def __eq__(self, other):
+    """
+    A marker class for required arguments.
+    """
+    def __eq__(self, other):  # pragma: no cover
+        # print(self, other) # for debug only
         return isinstance(other, _REQUIRED)
 
 
@@ -19,8 +23,11 @@ REQ = _REQUIRED()
 
 @dataclasses.dataclass(frozen=True)
 class _NOTHING:
-    def __eq__(self, other):
-        print(self, other)
+    """
+    A marker class for optional arguments.
+    """
+    def __eq__(self, other):  # pragma: no cover
+        # print(self, other) # for debug only
         return isinstance(other, _NOTHING)
 
 

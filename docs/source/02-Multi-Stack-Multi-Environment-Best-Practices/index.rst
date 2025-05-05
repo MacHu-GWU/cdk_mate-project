@@ -52,20 +52,21 @@ Directory Structure
     │       │   └── stack2/                             # Stack2-specific definition
     │       │       ├── iac_define.py                   # Stack2 entry point
     │       │       └── iac_define_01_everything.py     # Stack2 mixin class
-    │       ├── iac_init.py            # CDK stack initialization
+    │       ├── bsm_enum.py            # AWS session enumerations
     │       ├── stack_ctx_enum.py      # Stack context enumerations
-    │       └── bsm_enum.py            # AWS session enumerations
+    │       └── stack_enum.py          # CDK stack initialization
     └── tests/                         # Unit tests
         └── test_iac_init.py           # Tests for stack initialization
 
 
 Core Components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. **Stack Implementation**: Each stack is implemented in a dedicated module using a mixin pattern to manage complexity
-2. **BSM Enum**: Defines AWS session configurations for different environments
-3. **Stack Context Enum**: Defines metadata for each stack instance (stack name, AWS account, region)
-4. **IAC Initialization**: Creates CDK stack instances using context objects
-5. **Deployment Scripts**: Provides flexible deployment options
+1. **Stack Parameters**: A flexible system for defining and extending stack parameters
+2. **Stack Implementation**: Each stack is implemented in a dedicated module using a mixin pattern to manage complexity
+3. **BSM Enum**: Defines AWS session configurations for different environments
+4. **Stack Context Enum**: Defines metadata for each stack instance (stack name, AWS account, region)
+5. **IAC Initialization**: Creates CDK stack instances using context objects
+6. **Deployment Scripts**: Provides flexible deployment options
 
 
 Implementation Details
@@ -73,6 +74,17 @@ Implementation Details
 Reference:
 
 - Stack definition source code: `cdk_mate/tests <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests>`_
+
+
+Stack Parameters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The :class:`~cdk_mate.stack_params.BaseParams` and its subclasses provide a flexible way to define and extend parameters for CDK constructs and stacks.
+
+.. dropdown:: stack_params.py
+
+    .. literalinclude:: ../../../cdk_mate/stack_params.py
+       :language: python
+       :linenos:
 
 
 Stack Context
