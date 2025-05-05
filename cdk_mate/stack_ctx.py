@@ -11,10 +11,14 @@ import typing as T
 import dataclasses
 
 import aws_cdk as cdk
+
 from boto_session_manager import BotoSesManager
 
-from .cli.cli_cmd import Synth, Diff, Deploy, Destroy
 from .arg import NA, T_KWARGS
+from .utils import to_camel, to_slug
+
+from .cli.cli_cmd import Synth, Diff, Deploy, Destroy
+
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from pathlib_mate import T_PATH_ARG
@@ -43,6 +47,23 @@ class StackCtx:
     aws_account_id: str = dataclasses.field()
     aws_region: str = dataclasses.field()
     bsm: T.Optional["BotoSesManager"] = dataclasses.field(default=None)
+
+    @classmethod
+    def new(
+        cls,
+        stack_name: str,
+        bsm: "BotoSesManager",
+    ):
+        """
+        Create a new StackCtx instance.
+        """
+        return cls(
+            construct_id=to_camel(to_slug(stack_name)),
+            stack_name=to_slug(stack_name),
+            aws_account_id=bsm.aws_account_id,
+            aws_region=bsm.aws_region,
+            bsm=bsm,
+        )
 
     def to_stack_kwargs(self) -> dict[str, T.Any]:
         """

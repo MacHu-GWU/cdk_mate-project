@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from cdk_mate.tests.iac_init import stack_enum
+from cdk_mate.tests.stack_enum import stack_enum
 
 _ = stack_enum.stack2_dev
 _ = stack_enum.stack2_test
