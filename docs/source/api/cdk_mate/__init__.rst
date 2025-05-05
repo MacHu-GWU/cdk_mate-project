@@ -12,10 +12,6 @@ sub packages and modules
 
     cli <cli/__init__>
     api <api>
-    arg <arg>
-    exc <exc>
-    stack <stack>
     stack_ctx <stack_ctx>
-    stack_params <stack_params>
     utils <utils>
     

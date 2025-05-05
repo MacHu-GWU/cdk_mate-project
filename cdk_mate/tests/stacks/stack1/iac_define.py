@@ -1,29 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import dataclasses
-
 import aws_cdk as cdk
-from cdk_mate.api import BaseStack, StackParams, REQ
+from constructs import Construct
 
 from .iac_define_01_everything import Stack1Mixin
 
 
-@dataclasses.dataclass
-class Stack1Params(StackParams):
-    project_name: str = dataclasses.field(default=REQ)
-    env_name: str = dataclasses.field(default=REQ)
-
-
 class Stack1(
-    BaseStack,
+    cdk.Stack,
     Stack1Mixin,
 ):
     def __init__(
         self,
-        params: Stack1Params,
+        scope: Construct,
+        id: str,
+        stack_name: str,
+        env: cdk.Environment,
     ):
-        super().__init__(params=params)
-        self.params = params
+        super().__init__(
+            scope=scope,
+            id=id,
+            stack_name=stack_name,
+            env=env,
+        )
         self.create_everything()
-        cdk.Tags.of(self).add("tech:project_name", self.params.project_name)
-        cdk.Tags.of(self).add("tech:env_name", self.params.env_name)

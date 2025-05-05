@@ -2,20 +2,27 @@
 
 import os
 import pytest
-from cdk_mate.tests.stack_enum import stack_enum
+
+from cdk_mate.tests.mock_aws import BaseMockAwsTest
 
 
-@pytest.mark.skipif("CI" in os.environ, reason="Skip test in CI")
-def test_iac_init():
-    _ = stack_enum.stack1_dev
-    _ = stack_enum.stack1_test
-    _ = stack_enum.stack2_dev
-    _ = stack_enum.stack2_test
+class TestStackEnum(BaseMockAwsTest):
+    def test_synth(self):
+        from cdk_mate.tests.stack_enum import stack_enum
 
-    stack_enum.app.synth()
+        _ = stack_enum.stack1_dev
+        _ = stack_enum.stack1_test
+        _ = stack_enum.stack2_dev
+        _ = stack_enum.stack2_test
+
+        stack_enum.app.synth()
 
 
 if __name__ == "__main__":
-    from cdk_mate.tests import run_unit_test
+    from cdk_mate.tests import run_cov_test
 
-    run_unit_test(__file__)
+    run_cov_test(
+        __file__,
+        "cdk_mate",
+        preview=False,
+    )

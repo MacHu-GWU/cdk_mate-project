@@ -56,17 +56,16 @@ Directory Structure
     │       ├── stack_ctx_enum.py      # Stack context enumerations
     │       └── stack_enum.py          # CDK stack initialization
     └── tests/                         # Unit tests
-        └── test_iac_init.py           # Tests for stack initialization
+        └── test_stack_enum.py         # Tests for stack initialization
 
 
 Core Components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. **Stack Parameters**: A flexible system for defining and extending stack parameters
-2. **Stack Implementation**: Each stack is implemented in a dedicated module using a mixin pattern to manage complexity
-3. **BSM Enum**: Defines AWS session configurations for different environments
-4. **Stack Context Enum**: Defines metadata for each stack instance (stack name, AWS account, region)
-5. **IAC Initialization**: Creates CDK stack instances using context objects
-6. **Deployment Scripts**: Provides flexible deployment options
+1. **Stack Implementation**: Each stack is implemented in a dedicated module using a mixin pattern to manage complexity
+2. **BSM Enum**: Defines AWS session configurations for different environments
+3. **Stack Context Enum**: Defines metadata for each stack instance (stack name, AWS account, region)
+4. **IAC Initialization**: Creates CDK stack instances using context objects
+5. **Deployment Scripts**: Provides flexible deployment options
 
 
 Implementation Details
@@ -74,17 +73,6 @@ Implementation Details
 Reference:
 
 - Stack definition source code: `cdk_mate/tests <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests>`_
-
-
-Stack Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :class:`~cdk_mate.stack_params.BaseParams` and its subclasses provide a flexible way to define and extend parameters for CDK constructs and stacks.
-
-.. dropdown:: stack_params.py
-
-    .. literalinclude:: ../../../cdk_mate/stack_params.py
-       :language: python
-       :linenos:
 
 
 Stack Context
@@ -124,9 +112,9 @@ Stack Initialization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The stack initialization module creates CDK stack instances using the context objects:
 
-.. dropdown:: iac_init.py
+.. dropdown:: stack_enum.py
 
-    .. literalinclude:: ../../../cdk_mate/tests/iac_init.py
+    .. literalinclude:: ../../../cdk_mate/tests/stack_enum.py
        :language: python
        :linenos:
 
@@ -184,28 +172,25 @@ Deploy multiple stacks to the same environment:
 
 Testing
 ------------------------------------------------------------------------------
-The pattern includes a testing approach that synthesizes stacks without deployment (`tests/test_iac_init.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_iac_init.py>`_):
+The pattern includes a testing approach that synthesizes stacks without deployment (`tests/test_stack_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_enum.py>`_):
 
-.. dropdown:: test_iac_init.py
+.. dropdown:: test_stack_enum.py
 
-    .. literalinclude:: ../../../tests/test_iac_init.py
+    .. literalinclude:: ../../../tests/test_stack_enum.py
        :language: python
        :linenos:
 
 
 Usage Guide
 ------------------------------------------------------------------------------
-Reference:
-
-- `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_
 
 
 Setting Up New Stacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. **Define Stack Implementation**: Create a new module in the ``stacks`` (example: `cdk_mate/tests/stacks <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests/stacks>`_) directory to implement your CDK stack.
-2. **Add Stack Context**: Add new stack context entries to the ``StackCtxEnum`` class for each environment.
-3. **Update Initialization**: Add the new stack to the initialization module.
-4. **Create Deployment Scripts**: Add deployment scripts for the new stack.
+1. **Define Stack Implementation**: Create a new module in the `stacks (cdk_mate/tests/stacks) <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests/stacks>`_ module to implement your CDK stack.
+2. **Add Stack Context**: Add new stack context entries to the `stack_ctx_enum.py (cdk_mate/tests/stack_ctx_enum.py) <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_ctx_enum.py>`_ module for each environment.
+3. **Update Initialization**: Add the new stack to the `stack_enum.py module (cdk_mate/tests/stack_enum.py) <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_enum.py>`_ module.
+4. **Create Deployment Scripts**: Add deployment scripts for the new stack in `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_.
 
 
 Deployment Workflows
@@ -214,7 +199,23 @@ Deployment Workflows
 
 Individual Stack Development
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-When working on a specific stack, use the stack-specific deployment script:
+First ensure that you enabled the stack you want to deploy in the ``xyz_app.py`` script like this:
+
+.. dropdown:: stack1_app.py
+
+    .. literalinclude:: ../../../cdk/stack1/stack1_app.py
+       :language: python
+       :linenos:
+
+When working on a specific stack, use the stack-specific deployment script ``xyz_deploy.py``, comment in and out the right line like this:
+
+.. dropdown:: stack1_deploy.py
+
+    .. literalinclude:: ../../../cdk/stack1/stack1_deploy.py
+       :language: python
+       :linenos:
+
+Then run the deployment script from the command line:
 
 .. code-block:: bash
 

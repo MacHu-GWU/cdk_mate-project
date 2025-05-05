@@ -15,6 +15,28 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+0.1.4 (2025-05-05)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**💥Breaking Changes**
+
+- The following APIs are removed, and are moved to `func_args <https://github.com/MacHu-GWU/func_args-project>`_:
+    - ``cdk_mate.api.ParamError``
+    - ``cdk_mate.api.REQ``
+    - ``cdk_mate.api.NA``
+    - ``cdk_mate.api.rm_na``
+    - ``cdk_mate.api.T_KWARGS``
+- The following APIs are removed, and are moved to `cdkit <https://github.com/MacHu-GWU/cdkit-project>`_:
+    - ``cdk_mate.api.BaseStack``
+    - ``cdk_mate.api.BaseParams``
+    - ``cdk_mate.api.ConstructParams``
+    - ``cdk_mate.api.StackParams``
+
+**Minor Improvements**
+
+- Refactor the code base
+- Improve the example
+
+
 0.1.3 (2025-05-05)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

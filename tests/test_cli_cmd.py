@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pytest
-from cdk_mate.arg import NA
 from cdk_mate.cli.cli_cmd import (
     Synth,
 )

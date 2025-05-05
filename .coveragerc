@@ -3,7 +3,11 @@
 [run]
 omit =
     cdk_mate/docs/*
-    cdk_mate/tests/*
+    cdk_mate/tests/helper.py
+    cdk_mate/tests/bsm_enum.py
+    cdk_mate/tests/stack_ctx_enum.py
+    cdk_mate/tests/stack_enum.py
+    cdk_mate/tests/mock_aws.py
     cdk_mate/vendor/*
     cdk_mate/_version.py
     cdk_mate/cli.py

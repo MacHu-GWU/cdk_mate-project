@@ -10,17 +10,8 @@ def test():
     _ = api.cli.Diff
     _ = api.cli.Deploy
     _ = api.cli.Destroy
-    _ = api.ParamError
-    _ = api.REQ
-    _ = api.NA
-    _ = api.rm_na
-    _ = api.T_KWARGS
     _ = api.to_camel
     _ = api.to_slug
-    _ = api.BaseStack
-    _ = api.BaseParams
-    _ = api.ConstructParams
-    _ = api.StackParams
     _ = api.StackCtx
     _ = api.cdk_diff_many
     _ = api.cdk_deploy_many

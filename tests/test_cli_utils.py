@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from cdk_mate.arg import NA
+from func_args.api import OPT
 from cdk_mate.cli.cli_utils import (
     pos_arg,
     value_arg,
@@ -26,9 +26,9 @@ class TestArgumentTypes:
         pos_arg.process("ids", ["stack1", "stack2"], args)
         assert args == ["stack1", "stack2"]
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        pos_arg.process("id", NA, args)
+        pos_arg.process("id", OPT, args)
         assert args == []
 
         # Test with falsy value (should be ignored)
@@ -49,9 +49,9 @@ class TestArgumentTypes:
         value_arg.process("stack", "my-stack", args)
         assert args == ["--stack", "my-stack"]
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        value_arg.process("stack", NA, args)
+        value_arg.process("stack", OPT, args)
         assert args == []
 
         # Test with falsy value (should be ignored)
@@ -72,9 +72,9 @@ class TestArgumentTypes:
         bool_arg.process("help", False, args)
         assert args == []
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        bool_arg.process("help", NA, args)
+        bool_arg.process("help", OPT, args)
         assert args == []
 
     def test_key_value_arg(self):
@@ -89,9 +89,9 @@ class TestArgumentTypes:
         assert "key2=value2" in args
         assert len(args) == 4
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        kv_arg.process("parameter", NA, args)
+        kv_arg.process("parameter", OPT, args)
         assert args == []
 
         # Test with empty dictionary (should be ignored)
@@ -107,9 +107,9 @@ class TestArgumentTypes:
         array_arg.process("plugin", ["plugin1", "plugin2"], args)
         assert args == ["--plugin", "plugin1", "--plugin", "plugin2"]
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        array_arg.process("plugin", NA, args)
+        array_arg.process("plugin", OPT, args)
         assert args == []
 
         # Test with empty list (should be ignored)
@@ -130,9 +130,9 @@ class TestArgumentTypes:
         count_arg.process("verbose", 0, args)
         assert args == []
 
-        # Test with NA value (should be ignored)
+        # Test with OPT value (should be ignored)
         args = []
-        count_arg.process("verbose", NA, args)
+        count_arg.process("verbose", OPT, args)
         assert args == []
 
 

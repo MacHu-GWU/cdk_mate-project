@@ -9,8 +9,8 @@ from functools import cached_property
 
 import aws_cdk as cdk
 
-from .stacks.stack1.iac_define import Stack1Params, Stack1
-from .stacks.stack2.iac_define import Stack2Params, Stack2
+from .stacks.stack1.iac_define import Stack1
+from .stacks.stack2.iac_define import Stack2
 
 from .stack_ctx_enum import stack_ctx_enum
 
@@ -26,45 +26,29 @@ class StackEnum:
     @cached_property
     def stack1_dev(self):
         return Stack1(
-            params=Stack1Params(
-                scope=self.app,
-                project_name="stack1",
-                env_name="dev",
-                **stack_ctx_enum.stack1_dev.to_stack_kwargs(),
-            ),
+            scope=self.app,
+            **stack_ctx_enum.stack1_dev.to_stack_kwargs(),
         )
 
     @cached_property
     def stack1_test(self):
         return Stack1(
-            params=Stack1Params(
-                scope=self.app,
-                project_name="stack1",
-                env_name="test",
-                **stack_ctx_enum.stack1_test.to_stack_kwargs(),
-            ),
+            scope=self.app,
+            **stack_ctx_enum.stack1_test.to_stack_kwargs(),
         )
 
     @cached_property
     def stack2_dev(self):
         return Stack2(
-            params=Stack2Params(
-                scope=self.app,
-                project_name="stack2",
-                env_name="dev",
-                **stack_ctx_enum.stack2_dev.to_stack_kwargs(),
-            ),
+            scope=self.app,
+            **stack_ctx_enum.stack2_dev.to_stack_kwargs(),
         )
 
     @cached_property
     def stack2_test(self):
         return Stack2(
-            params=Stack2Params(
-                scope=self.app,
-                project_name="stack2",
-                env_name="test",
-                **stack_ctx_enum.stack2_test.to_stack_kwargs(),
-            ),
+            scope=self.app,
+            **stack_ctx_enum.stack2_test.to_stack_kwargs(),
         )
 
 

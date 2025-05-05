@@ -12,7 +12,7 @@ import subprocess
 import contextlib
 from pathlib import Path
 
-from ..arg import _NOTHING
+from func_args.api import OPT
 
 from ..vendor.better_pathlib import temp_cwd
 
@@ -33,7 +33,7 @@ class BaseArgType:
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, T.Any],
+        value: T.Any,
         args: list[str],
     ):  # pragma: no cover
         """
@@ -63,10 +63,10 @@ class PositionalArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, T.Any],
+        value: T.Any,
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             if isinstance(value, list):
@@ -91,10 +91,10 @@ class ValueArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, T.Any],
+        value: T.Any,
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             args.append(f"--{name}")
@@ -116,10 +116,10 @@ class BoolArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, bool],
+        value: T.Union[T.Literal["OPT"], bool],
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             args.append(f"--{name}")
@@ -140,10 +140,10 @@ class KeyValueArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, dict[str, str]],
+        value: T.Union[T.Literal["OPT"], dict[str, str]],
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             for k, v in value.items():
@@ -166,10 +166,10 @@ class ArrayArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, list[str]],
+        value: T.Union[T.Literal["OPT"], list[str]],
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             for item in value:
@@ -192,10 +192,10 @@ class CountArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[_NOTHING, int],
+        value: T.Union[T.Literal["OPT"], int],
         args: list[str],
     ):
-        if isinstance(value, _NOTHING):
+        if value is OPT:
             return
         if value:
             for _ in range(value):
