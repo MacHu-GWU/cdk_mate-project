@@ -33,7 +33,7 @@ class BaseParams:
             if isinstance(field.default, _REQUIRED):
                 try:
                     req_kwargs[field.name] = kwargs[field.name]
-                except KeyError:
+                except KeyError:  # pragma: no cover
                     raise ParamError(
                         f"{field.name!r} is a required parameter for {cls}!"
                     )
