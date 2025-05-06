@@ -25,7 +25,7 @@ deploy, destroy, etc.) with comprehensive option handling and flexible execution
 import typing as T
 import dataclasses
 
-from func_args.api import REQ, OPT, ParamError, BaseModel
+from func_args.api import REQ, OPT, BaseModel
 
 from .cli_utils import (
     pos_arg,
@@ -107,8 +107,11 @@ class BaseCommand(BaseModel):
         """
         Process a field based on its metadata type.
         """
+        name = field.name.replace("_", "-")
+        if name.endswith("_"):
+            name = name[:-1]
         field.metadata["t"].process(
-            name=field.name.replace("_", "-"),
+            name=name,
             value=getattr(self, field.name),
             args=args,
         )
@@ -163,6 +166,22 @@ class BaseCommand(BaseModel):
 
 
 @dataclasses.dataclass
+class Acknowledge(BaseCommand):
+    """
+    Acknowledge a notice by issue number and hide it from displaying again.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-ack.html
+    """
+
+    # fmt: off
+    notice_id: str = dataclasses.field(default=OPT, metadata={"t": pos_arg})
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+        return ["cdk", "acknowledge"]
+
+
+@dataclasses.dataclass
 class Bootstrap(BaseCommand):
     """
     Prepare an AWS environment for CDK deployments by deploying the CDK bootstrap stack,
@@ -198,46 +217,22 @@ class Bootstrap(BaseCommand):
 
 
 @dataclasses.dataclass
-class Synth(BaseCommand):
+class Context(BaseCommand):
     """
-    Synthesize AWS CDK stacks into CloudFormation templates with comprehensive configuration options.
+    Manage cached context values for your AWS CDK application.
 
-    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-synth.html
-    """
-
-    # fmt: off
-    exclusively: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    quiet: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    validation: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    # fmt: on
-
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "synth"]
-
-
-@dataclasses.dataclass
-class Diff(BaseCommand):
-    """
-    Compare deployed stacks with current state or a specific CloudFormation template.
-
-    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-diff.html
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-context.html
     """
 
     # fmt: off
-    stacks: list[str] = dataclasses.field(default=OPT, metadata={"t": pos_arg})
-    change_set: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    context_lines: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
-    exclusively: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    fail: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    processed: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    quiet: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    security_only: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    strict: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    template: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    clear: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    force: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    reset: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+
     # fmt: on
 
     def _cdk_cmd(self) -> list[str]:  # pragma: no cover
-        return ["cdk", "diff"]
+        return ["cdk", "context"]
 
 
 @dataclasses.dataclass
@@ -296,3 +291,118 @@ class Destroy(BaseCommand):
 
     def _cdk_cmd(self) -> list[str]:  # pragma: no cover
         return ["cdk", "destroy"]
+
+
+@dataclasses.dataclass
+class Diff(BaseCommand):
+    """
+    Compare deployed stacks with current state or a specific CloudFormation template.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-diff.html
+    """
+
+    # fmt: off
+    stacks: list[str] = dataclasses.field(default=OPT, metadata={"t": pos_arg})
+    change_set: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    context_lines: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    exclusively: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    fail: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    processed: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    quiet: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    security_only: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    strict: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    template: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+        return ["cdk", "diff"]
+
+
+@dataclasses.dataclass
+class GC(BaseCommand):
+    """
+    Perform garbage collection on unused assets stored in the resources of your bootstrap stack.
+
+    Note: This command is still in development and requires the --unstable=gc option.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-gc.html
+    """
+
+    # fmt: off
+    aws_environment: list[str] = dataclasses.field(default=OPT, metadata={"t": pos_arg})
+    action: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    bootstrap_stack_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    confirm: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    created_buffer_days: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    rollback_buffer_days: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    type: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    unstable: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
+
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+        return ["cdk", "gc"]
+
+
+@dataclasses.dataclass
+class Import(BaseCommand):
+    """
+    Import existing AWS resources into a CDK stack.
+
+    This command allows you to take existing resources that were created using
+    other methods and start managing them using the AWS CDK.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-import.html
+    """
+
+    # fmt: off
+    stacks: list[str] = dataclasses.field(default=OPT, metadata={"t": pos_arg})
+    change_set_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    execute: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    force: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    record_resource_mapping: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    resource_mapping: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    rollback: T.Optional[bool] = dataclasses.field(default=None, metadata={"t": bool_arg})
+    toolkit_stack_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+        return ["cdk", "import"]
+
+
+@dataclasses.dataclass
+class Init(BaseCommand):
+    """
+    Create a new AWS CDK project from a template.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-init.html
+    """
+
+    # fmt: off
+    template_type: str = dataclasses.field(default=OPT, metadata={"t": pos_arg})
+    generate_only: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    language: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    list_: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+        return ["cdk", "init"]
+
+
+@dataclasses.dataclass
+class Synth(BaseCommand):
+    """
+    Synthesize AWS CDK stacks into CloudFormation templates with comprehensive configuration options.
+
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-synth.html
+    """
+
+    # fmt: off
+    exclusively: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    quiet: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    validation: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    # fmt: on
+
+    def _cdk_cmd(self) -> list[str]:
+        return ["cdk", "synth"]

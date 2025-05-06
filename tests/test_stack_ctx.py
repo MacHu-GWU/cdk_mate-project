@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import pytest
+from func_args.api import ParamError
 from cdk_mate.stack_ctx import StackCtx
 
 
@@ -13,6 +15,9 @@ class TestStackCtx:
         )
         _ = stack_ctx.to_stack_kwargs()
         _ = stack_ctx.stack_console_url
+
+        with pytest.raises(ParamError):
+            stack_ctx = StackCtx()
 
 
 if __name__ == "__main__":

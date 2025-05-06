@@ -13,7 +13,7 @@ import dataclasses
 import aws_cdk as cdk
 
 from boto_session_manager import BotoSesManager
-from func_args.api import T_KWARGS, OPT
+from func_args.api import T_KWARGS, REQ, OPT, BaseModel
 
 from .utils import to_camel, to_slug
 
@@ -25,7 +25,7 @@ if T.TYPE_CHECKING:  # pragma: no cover
 
 
 @dataclasses.dataclass
-class StackCtx:
+class StackCtx(BaseModel):
     """
     Represents the configuration and deployment context for an AWS CDK stack.
 
@@ -42,10 +42,10 @@ class StackCtx:
     :param bsm: Optional Boto Session Manager for AWS credentials
     """
 
-    construct_id: str = dataclasses.field()
-    stack_name: str = dataclasses.field()
-    aws_account_id: str = dataclasses.field()
-    aws_region: str = dataclasses.field()
+    construct_id: str = dataclasses.field(default=REQ)
+    stack_name: str = dataclasses.field(default=REQ)
+    aws_account_id: str = dataclasses.field(default=REQ)
+    aws_region: str = dataclasses.field(default=REQ)
     bsm: T.Optional["BotoSesManager"] = dataclasses.field(default=None)
 
     @classmethod

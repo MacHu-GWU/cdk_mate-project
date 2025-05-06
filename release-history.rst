@@ -15,6 +15,23 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+0.1.5 (Backlog)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Add the following public APIs:
+    - ``cdk_mate.api.cli.BaseCommand``
+    - ``cdk_mate.api.cli.Acknowledge``
+    - ``cdk_mate.api.cli.Context``
+    - ``cdk_mate.api.cli.GC``
+    - ``cdk_mate.api.cli.Import``
+    - ``cdk_mate.api.cli.Init``
+
+**Minor Improvements**
+
+- Use ``func_args.REQ`` as default value for ``StackCtx`` to make it extensible.
+
+
 0.1.4 (2025-05-05)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **💥Breaking Changes**

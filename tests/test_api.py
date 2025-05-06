@@ -5,11 +5,17 @@ from cdk_mate import api
 
 def test():
     _ = api
+    _ = api.cli.BaseCommand
+    _ = api.cli.Acknowledge
     _ = api.cli.Bootstrap
-    _ = api.cli.Synth
-    _ = api.cli.Diff
+    _ = api.cli.Context
     _ = api.cli.Deploy
     _ = api.cli.Destroy
+    _ = api.cli.Diff
+    _ = api.cli.GC
+    _ = api.cli.Import
+    _ = api.cli.Init
+    _ = api.cli.Synth
     _ = api.to_camel
     _ = api.to_slug
     _ = api.StackCtx
