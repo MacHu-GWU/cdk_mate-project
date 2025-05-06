@@ -7,6 +7,9 @@ def test_to_camel():
     assert to_camel("Hello_world") == "HelloWorld"
     assert to_camel("hello-World") == "HelloWorld"
     assert to_camel("HELLO WORLD") == "HelloWorld"
+    assert to_camel("hello world") == "HelloWorld"
+    assert to_camel("HELLO  WORLD") == "HelloWorld"
+    assert to_camel("hello  world") == "HelloWorld"
 
 
 def test_to_slug():

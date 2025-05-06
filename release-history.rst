@@ -15,7 +15,14 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
-0.1.5 (Backlog)
+0.1.6 (2025-05-06)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Minor Improvements**
+
+- Add ``StackCtx.make_stack_ctx_kwargs`` method to make it more extensible.
+
+
+0.1.5 (2025-05-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 

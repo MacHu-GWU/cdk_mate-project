@@ -19,6 +19,8 @@ def test():
     _ = api.to_camel
     _ = api.to_slug
     _ = api.StackCtx
+    _ = api.StackCtx.make_stack_ctx_kwargs
+    _ = api.StackCtx.new
     _ = api.StackCtx.to_stack_kwargs
     _ = api.StackCtx.stack_console_url
     _ = api.StackCtx.cdk_synth

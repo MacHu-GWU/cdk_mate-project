@@ -21,6 +21,7 @@ Public API List:
 - :class:`cdk_mate.api.to_camel <cdk_mate.utils.to_camel>`
 - :class:`cdk_mate.api.to_slug <cdk_mate.utils.to_slug>`
 - :class:`cdk_mate.api.StackCtx <cdk_mate.stack_ctx.StackCtx>`
+- :meth:`cdk_mate.api.StackCtx.make_stack_ctx_kwargs <cdk_mate.stack_ctx.StackCtx.make_stack_ctx_kwargs>`
 - :meth:`cdk_mate.api.StackCtx.new <cdk_mate.stack_ctx.StackCtx.new>`
 - :meth:`cdk_mate.api.StackCtx.to_stack_kwargs <cdk_mate.stack_ctx.StackCtx.to_stack_kwargs>`
 - :meth:`cdk_mate.api.StackCtx.stack_console_url <cdk_mate.stack_ctx.StackCtx.stack_console_url>`

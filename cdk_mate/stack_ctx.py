@@ -49,6 +49,23 @@ class StackCtx(BaseModel):
     bsm: T.Optional["BotoSesManager"] = dataclasses.field(default=None)
 
     @classmethod
+    def make_stack_ctx_kwargs(
+        cls,
+        stack_name: str,
+        bsm: "BotoSesManager",
+    ) -> T_KWARGS:
+        """
+        Create a new StackCtx instance.
+        """
+        return {
+            "construct_id": to_camel(stack_name),
+            "stack_name": to_slug(stack_name),
+            "aws_account_id": bsm.aws_account_id,
+            "aws_region": bsm.aws_region,
+            "bsm": bsm,
+        }
+
+    @classmethod
     def new(
         cls,
         stack_name: str,
@@ -58,11 +75,10 @@ class StackCtx(BaseModel):
         Create a new StackCtx instance.
         """
         return cls(
-            construct_id=to_camel(to_slug(stack_name)),
-            stack_name=to_slug(stack_name),
-            aws_account_id=bsm.aws_account_id,
-            aws_region=bsm.aws_region,
-            bsm=bsm,
+            **cls.make_stack_ctx_kwargs(
+                stack_name=stack_name,
+                bsm=bsm,
+            )
         )
 
     def to_stack_kwargs(self) -> dict[str, T.Any]:
