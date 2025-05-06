@@ -19,6 +19,12 @@ def test():
     _ = api.to_camel
     _ = api.to_slug
     _ = api.StackCtx
+    _ = api.StackCtx.to_stack_kwargs
+    _ = api.StackCtx.stack_console_url
+    _ = api.StackCtx.cdk_synth
+    _ = api.StackCtx.cdk_diff
+    _ = api.StackCtx.cdk_deploy
+    _ = api.StackCtx.cdk_destroy
     _ = api.cdk_diff_many
     _ = api.cdk_deploy_many
     _ = api.cdk_destroy_many
