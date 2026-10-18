@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from cdk_mate.stack_ctx import StackCtx
+from cdk_mate.stack_ctx import _get_bsm_for_many
+from cdk_mate.stack_ctx import cdk_diff_many
+from cdk_mate.stack_ctx import cdk_deploy_many
+from cdk_mate.stack_ctx import cdk_destroy_many
 
 import pytest
 from func_args.api import ParamError
@@ -25,6 +29,46 @@ class TestStackCtx:
 
         with pytest.raises(ParamError):
             StackCtx()
+
+
+def _make_ctx(name: str, account: str, bsm=None) -> StackCtx:
+    return StackCtx(
+        construct_id=name,
+        stack_name=name,
+        aws_account_id=account,
+        aws_region="us-east-1",
+        bsm=bsm,
+    )
+
+
+class TestGetBsmForMany:
+    def test_empty(self):
+        with pytest.raises(ValueError):
+            _get_bsm_for_many([])
+        # the *_many functions fail before running anything
+        for func in [cdk_diff_many, cdk_deploy_many, cdk_destroy_many]:
+            with pytest.raises(ValueError):
+                func([])
+
+    def test_same_account(self, capsys: pytest.CaptureFixture):
+        bsm = object()
+        ctx_list = [
+            _make_ctx("a", "111111111111", bsm=bsm),
+            _make_ctx("b", "111111111111"),
+        ]
+        assert _get_bsm_for_many(ctx_list) is bsm
+        assert "Warning" not in capsys.readouterr().out
+
+    def test_mixed_accounts(self, capsys: pytest.CaptureFixture):
+        bsm = object()
+        ctx_list = [
+            _make_ctx("a", "111111111111", bsm=bsm),
+            _make_ctx("b", "222222222222"),
+        ]
+        assert _get_bsm_for_many(ctx_list) is bsm
+        out = capsys.readouterr().out
+        assert "Warning: these stacks target more than one AWS account" in out
+        assert "'a'" in out
 
 
 class TestStackCtxSynth(BaseMockAwsTest):

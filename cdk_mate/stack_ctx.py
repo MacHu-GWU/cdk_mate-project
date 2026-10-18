@@ -227,6 +227,33 @@ class StackCtx(BaseModel):
         return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
 
 
+def _get_bsm_for_many(
+    stack_ctx_list: list[StackCtx],
+) -> BotoSesManager | None:
+    """
+    Pick the boto session that runs one CDK command for many stacks.
+
+    All stacks run with the credentials of the first one. Stacks in other
+    accounts or regions are allowed, because the CDK CLI can deploy them when
+    those accounts trust this one (``cdk bootstrap --trust``), but a warning is
+    printed, since a mixed list is more often a mistake.
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
+    """
+    if len(stack_ctx_list) == 0:
+        raise ValueError("stack_ctx_list is empty, there is no stack to run")
+    first = stack_ctx_list[0]
+    targets = {(ctx.aws_account_id, ctx.aws_region) for ctx in stack_ctx_list}
+    if len(targets) > 1:
+        print(
+            "Warning: these stacks target more than one AWS account or region, "
+            f"and all of them run with the credentials of {first.stack_name!r}. "
+            "This works only if the other accounts trust that account "
+            "(cdk bootstrap --trust)."
+        )
+    return first.bsm
+
+
 def cdk_diff_many(
     stack_ctx_list: list[StackCtx],
     dir_cdk: T_PATH_ARG | None = None,
@@ -239,7 +266,10 @@ def cdk_diff_many(
 
     :param stack_ctx_list: List of stack contexts to compare
     :param dir_cdk: Optional directory path for CDK context
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
     """
+    bsm = _get_bsm_for_many(stack_ctx_list)
     print("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
         print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
@@ -247,7 +277,7 @@ def cdk_diff_many(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
         **kwargs,
     )
-    return cmd.run(bsm=stack_ctx_list[0].bsm, dir_cdk=dir_cdk)
+    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
 
 
 def cdk_deploy_many(
@@ -264,7 +294,10 @@ def cdk_deploy_many(
     :param stack_ctx_list: List of stack contexts to deploy
     :param dir_cdk: Optional directory path for CDK deployment context
     :param prompt: Whether to prompt for approval before deployment
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
     """
+    bsm = _get_bsm_for_many(stack_ctx_list)
     print("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
         print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
@@ -273,7 +306,7 @@ def cdk_deploy_many(
         require_approval=OPT if prompt else "never",
         **kwargs,
     )
-    return cmd.run(bsm=stack_ctx_list[0].bsm, dir_cdk=dir_cdk)
+    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
 
 
 def cdk_destroy_many(
@@ -290,7 +323,10 @@ def cdk_destroy_many(
     :param stack_ctx_list: List of stack contexts to destroy
     :param dir_cdk: Optional directory path for CDK deployment context
     :param prompt: Whether to prompt for approval before destruction
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
     """
+    bsm = _get_bsm_for_many(stack_ctx_list)
     print("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
         print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
@@ -299,4 +335,4 @@ def cdk_destroy_many(
         force=OPT if prompt else True,
         **kwargs,
     )
-    return cmd.run(bsm=stack_ctx_list[0].bsm, dir_cdk=dir_cdk)
+    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)

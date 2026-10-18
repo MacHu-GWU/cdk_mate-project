@@ -41,7 +41,8 @@ class BaseArgType:
         Process an argument for CLI commands.
 
         :param name: The name of the argument (without '--' prefix)
-        :param value: The value of the argument, can be NOTHING or any value
+        :param value: The value of the argument, or ``OPT`` (not set), which
+            passes nothing; func_args has no public type for ``OPT``, hence ``T.Any``
         :param args: The list of arguments to append the processed argument to
 
         :return: None, modifies the args list in-place
@@ -122,7 +123,7 @@ class BoolArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Literal["OPT"] | bool | None,
+        value: T.Any,
         args: list[str],
     ):
         if value is OPT or value is None:
@@ -148,7 +149,7 @@ class KeyValueArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Literal["OPT"] | dict[str, str],
+        value: T.Any,
         args: list[str],
     ):
         if value is OPT:
@@ -174,7 +175,7 @@ class ArrayArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Literal["OPT"] | list[str],
+        value: T.Any,
         args: list[str],
     ):
         if value is OPT:
@@ -200,7 +201,7 @@ class CountArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Literal["OPT"] | int,
+        value: T.Any,
         args: list[str],
     ):
         if value is OPT:
@@ -340,6 +341,21 @@ def resolve_dir_cdk(dir_cdk: T_PATH_ARG) -> Path:
     return path
 
 
+def print_aws_identity(bsm: BotoSesManager) -> None:
+    """
+    Print the AWS account and principal that ``bsm`` acts as, masked.
+
+    This is informational only, so a failure (for example a role without
+    ``iam:ListAccountAliases``, or expired credentials) prints a warning
+    instead of raising. A real credential problem still surfaces when the
+    CDK command runs.
+    """
+    try:
+        bsm.print_who_am_i(masked=True)
+    except Exception as e:
+        print(f"Warning: cannot show the AWS identity ({type(e).__name__}: {e})")
+
+
 def run_cdk_command(
     args: list[str],
     bsm: BotoSesManager | None = None,
@@ -369,6 +385,6 @@ def run_cdk_command(
     env = None
     if bsm is not None:
         print("--- Using boto session ---")
-        bsm.print_who_am_i(masked=True)
+        print_aws_identity(bsm)
         env = get_aws_cli_env(bsm)
     return run_cmd(args, cwd=cwd, env=env)

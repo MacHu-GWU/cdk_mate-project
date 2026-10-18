@@ -9,6 +9,7 @@ from cdk_mate.cli.cli_utils import count_arg
 from cdk_mate.cli.cli_utils import run_cmd
 from cdk_mate.cli.cli_utils import get_aws_cli_env
 from cdk_mate.cli.cli_utils import resolve_dir_cdk
+from cdk_mate.cli.cli_utils import print_aws_identity
 from cdk_mate.cli.cli_utils import run_cdk_command
 
 import os
@@ -244,6 +245,23 @@ def test_resolve_dir_cdk(tmp_path: Path):
         resolve_dir_cdk(tmp_path / "not-exists")
 
 
+class TestPrintAwsIdentity(BaseMockAwsTest):
+    def test_ok(self, capsys: pytest.CaptureFixture):
+        bsm = BotoSesManager(region_name="us-east-1")
+        print_aws_identity(bsm)
+        assert "AWS Account Id" in capsys.readouterr().out
+
+    def test_failure_is_a_warning(self, capsys: pytest.CaptureFixture):
+        class DeniedBsm:
+            def print_who_am_i(self, masked: bool = True):
+                raise PermissionError("AccessDenied: iam:ListAccountAliases")
+
+        print_aws_identity(DeniedBsm())
+        out = capsys.readouterr().out
+        assert "Warning: cannot show the AWS identity" in out
+        assert "PermissionError" in out
+
+
 class TestRunCdkCommand(BaseMockAwsTest):
     def test_without_bsm(self, tmp_path: Path):
         cwd_before = os.getcwd()
@@ -263,8 +281,6 @@ class TestRunCdkCommand(BaseMockAwsTest):
             aws_secret_access_key="SECRET",
             region_name="us-west-2",
         )
-        # print_who_am_i in boto-session-manager 2.1.0 fails on an account with no alias
-        bsm.iam_client.create_account_alias(AccountAlias="cdk-mate-test")
         path_out = tmp_path / "out.json"
         run_cdk_command(
             [sys.executable, "-c", DUMP_SCRIPT, str(path_out)],

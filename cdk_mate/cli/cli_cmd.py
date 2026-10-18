@@ -296,7 +296,7 @@ class Destroy(BaseCommand):
     """
     Safely remove AWS CDK stacks from infrastructure with flexible destruction options.
 
-    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html
+    Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-destroy.html
     """
 
     # fmt: off
