@@ -66,6 +66,21 @@ class TestArgumentTypes:
         pos_arg.process("id", None, args)
         assert args == []
 
+        # Test with 0 (a real value, passed)
+        args = []
+        pos_arg.process("id", 0, args)
+        assert args == ["0"]
+
+        # Test with empty and None items in a list (skipped), 0 kept
+        args = []
+        pos_arg.process("ids", ["stack1", "", None, OPT, 0], args)
+        assert args == ["stack1", "0"]
+
+        # Test with an empty list (nothing)
+        args = []
+        pos_arg.process("ids", [], args)
+        assert args == []
+
     def test_value_arg(self):
         """Test ValueArg processes arguments correctly"""
         args = []
@@ -79,10 +94,20 @@ class TestArgumentTypes:
         value_arg.process("stack", OPT, args)
         assert args == []
 
-        # Test with falsy value (should be ignored)
+        # Test with empty string (should be ignored)
         args = []
         value_arg.process("stack", "", args)
         assert args == []
+
+        # Test with None value (should be ignored)
+        args = []
+        value_arg.process("stack", None, args)
+        assert args == []
+
+        # Test with 0 (a real value, passed): it can override a CLI default
+        args = []
+        value_arg.process("created-buffer-days", 0, args)
+        assert args == ["--created-buffer-days", "0"]
 
     def test_bool_arg(self):
         """Test BoolArg processes arguments correctly"""

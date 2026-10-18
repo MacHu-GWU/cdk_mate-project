@@ -87,6 +87,7 @@ Options and CLI Versions
 Every option defaults to "not set", and an option that is not set never reaches the command line, so the CDK CLI uses its own default. A newer ``cdk_mate`` therefore works with an older CDK CLI, as long as you only set options that CLI knows.
 
 - **Booleans:** ``True`` passes ``--name`` and ``False`` passes ``--no-name``, so options that are on by default can be turned off, such as ``Deploy(rollback=False)`` for ``--no-rollback`` or ``GC(confirm=False)`` for ``--no-confirm``.
+- **Zero and empty values:** ``0`` is passed (``GC(created_buffer_days=0)`` passes ``--created-buffer-days 0``); ``None`` and ``""`` pass nothing, like an option that is not set.
 - **Options this library does not define yet:** pass them verbatim with ``extra_args``; they go at the end of the command line.
 - **A specific CLI version:** set ``cdk_cmd``, the executable that runs the subcommand (``["cdk"]`` by default).
 

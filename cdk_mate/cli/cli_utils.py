@@ -53,9 +53,23 @@ class BaseArgType:
         raise NotImplementedError
 
 
+def _is_unset(value: T.Any) -> bool:
+    """
+    Whether a scalar value passes nothing: ``OPT``, ``None``, or ``""``.
+
+    ``0`` is a real value and is passed, so ``created_buffer_days=0`` can
+    override a CLI default of 1. ``False`` never reaches here: booleans are
+    handled by :class:`BoolArg`.
+    """
+    return value is OPT or value is None or (isinstance(value, str) and value == "")
+
+
 class PositionalArg(BaseArgType):
     """
     Process a positional argument for CLI commands.
+
+    A list passes each item. ``OPT``, ``None`` and ``""`` (as the value or as
+    an item) pass nothing; ``0`` is passed.
 
     Example::
 
@@ -71,19 +85,22 @@ class PositionalArg(BaseArgType):
         value: T.Any,
         args: list[str],
     ):
-        if value is OPT:
+        if _is_unset(value):
             return
-        if value:
-            if isinstance(value, list):
-                for item in value:
-                    args.append(str(item))
-            else:
-                args.append(str(value))
+        if isinstance(value, list):
+            items = value
+        else:
+            items = [value]
+        for item in items:
+            if not _is_unset(item):
+                args.append(str(item))
 
 
 class ValueArg(BaseArgType):
     """
     Process a standard value argument for CLI commands.
+
+    ``OPT``, ``None`` and ``""`` pass nothing; ``0`` is passed.
 
     Example::
 
@@ -91,6 +108,9 @@ class ValueArg(BaseArgType):
         value = "my-stack"
         # will be encoded as
         "--stack my-stack"
+        value = 0
+        # will be encoded as
+        "--stack 0"
     """
 
     def process(
@@ -99,11 +119,10 @@ class ValueArg(BaseArgType):
         value: T.Any,
         args: list[str],
     ):
-        if value is OPT:
+        if _is_unset(value):
             return
-        if value:
-            args.append(f"--{name}")
-            args.append(str(value))
+        args.append(f"--{name}")
+        args.append(str(value))
 
 
 class BoolArg(BaseArgType):

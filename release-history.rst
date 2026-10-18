@@ -72,6 +72,7 @@ x.y.z (Backlog)
 **Bugfixes**
 
 - A boolean option set to ``False`` now passes ``--no-<option>``, so options that are on by default can be turned off, such as ``Deploy(rollback=False)`` for ``--no-rollback`` and ``GC(confirm=False)`` for ``--no-confirm``. ``False`` used to pass nothing, which left the CLI default on.
+- A value option or positional argument set to ``0`` is now passed: ``GC(created_buffer_days=0)`` passes ``--created-buffer-days 0`` and ``Deploy(concurrency=0)`` passes ``--concurrency 0``. ``0`` used to pass nothing, so a CLI default could not be overridden with zero. ``None`` and ``""`` still pass nothing, and an empty string or ``None`` item of a positional list is skipped.
 - A field with a trailing underscore, used to avoid a Python keyword, now passes the option name without it: ``Init(list_=True)`` passes ``--list`` instead of ``--list-``.
 - Fix the reference link in the ``Destroy`` docstring, and the wrong ``to_slug()`` docstring example.
 

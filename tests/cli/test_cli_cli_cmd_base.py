@@ -87,6 +87,17 @@ def test_global_options():
     ]
 
 
+def test_zero_and_empty_string():
+    # 0 overrides a CLI default (gc's --created-buffer-days defaults to 1); "" passes nothing
+    assert GC(created_buffer_days=0, bootstrap_stack_name="").to_args() == [
+        "cdk",
+        "gc",
+        "--created-buffer-days",
+        "0",
+    ]
+    assert Deploy(concurrency=0).to_args() == ["cdk", "deploy", "--concurrency", "0"]
+
+
 def test_cdk_cmd():
     args = Synth(cdk_cmd=["npx", "aws-cdk@2.1145.0"], quiet=True).to_args()
     assert args == ["npx", "aws-cdk@2.1145.0", "synth", "--quiet"]
