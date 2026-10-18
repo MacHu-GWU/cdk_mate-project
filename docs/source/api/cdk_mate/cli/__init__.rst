@@ -12,5 +12,6 @@ sub packages and modules
 
     api <api>
     cli_cmd <cli_cmd>
+    cli_cmd_base <cli_cmd_base>
     cli_utils <cli_utils>
     

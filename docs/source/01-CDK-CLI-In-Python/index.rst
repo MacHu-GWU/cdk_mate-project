@@ -16,13 +16,16 @@ Key Features
 
 CLI Command Modules
 ------------------------------------------------------------------------------
-The CLI commands are implemented in :mod:`cdk_mate.cli.cli_cmd`, providing function wrappers for common CDK operations:
+The CLI commands are implemented in :mod:`cdk_mate.cli.cli_cmd`: one class per CDK CLI command, one field per option. It covers every command of the CDK CLI except ``cdk docs`` (opens a browser) and ``cdk lsp`` (a language server for editors). The most common ones:
 
 - :class:`cdk_mate.cli.cli_cmd.Bootstrap` - Prepare an AWS environment for CDK deployments
 - :class:`cdk_mate.cli.cli_cmd.Synth` - Synthesize CloudFormation templates
 - :class:`cdk_mate.cli.cli_cmd.Diff` - Compare deployed stacks with current state
 - :class:`cdk_mate.cli.cli_cmd.Deploy` - Deploy stacks to AWS
 - :class:`cdk_mate.cli.cli_cmd.Destroy` - Remove stacks from AWS
+- :class:`cdk_mate.cli.cli_cmd.List`, :class:`cdk_mate.cli.cli_cmd.Rollback`, :class:`cdk_mate.cli.cli_cmd.Drift`, :class:`cdk_mate.cli.cli_cmd.Watch`, and the rest of :mod:`cdk_mate.cli.cli_cmd`
+
+``cli_cmd.py`` is generated from the option registry that ships with the CDK CLI (``lib/cli/cli-type-registry.json`` in the ``aws-cdk`` npm package), so every field is documented with the CLI's own description, and options with fixed choices are typed as ``Literal``. The behavior shared by all commands is in :mod:`cdk_mate.cli.cli_cmd_base`.
 
 .. dropdown:: cli_cmd.py
 

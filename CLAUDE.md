@@ -6,6 +6,8 @@ What this library does: see `README.rst`.
 
 Package: `cdk_mate/` (import name `cdk_mate`).
 
+`cdk_mate/cli/cli_cmd.py` is generated: never edit it by hand. Change `.mise/tasks/gen-cli-cmd.py`, or bump `npm:aws-cdk` in `mise.toml`, then run `mise run gen-cli-cmd` and review the diff. Command behavior lives in `cdk_mate/cli/cli_cmd_base.py`.
+
 <!-- END project block -->
 
 <!-- BEGIN pywf-oss template block: shared by every repo built from the template. Replace as a whole on template upgrade; do not edit per repo. -->

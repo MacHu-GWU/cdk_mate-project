@@ -89,6 +89,15 @@ description = "📓 Convert Jupyter notebooks to Markdown for AI knowledge base 
 run = ".venv/bin/python .mise/tasks/notebook-to-markdown.py"
 depends = ["inst"]
 
+# Code Generation
+[tasks.gen-cli-cmd]
+description = "🛠️ Regenerate cdk_mate/cli/cli_cmd.py from the option registry of the installed CDK CLI ([tools] npm:aws-cdk)"
+run = """
+.venv/bin/python .mise/tasks/gen-cli-cmd.py
+uvx ruff format cdk_mate/cli/cli_cmd.py
+"""
+depends = ["inst"]
+
 # Building & Publishing & Release
 [tasks.build]
 description = "🏗️ Build Python package wheel and source distribution using uv (outputs to dist/)"
