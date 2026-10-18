@@ -39,7 +39,7 @@ from .cli_utils import count_arg
 from .cli_utils import run_cdk_command
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from pathlib_mate import T_PATH_ARG
+    from .cli_utils import T_PATH_ARG
     from boto_session_manager.api import BotoSesManager
 
 

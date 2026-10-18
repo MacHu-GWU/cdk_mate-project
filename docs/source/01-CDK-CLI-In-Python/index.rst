@@ -35,9 +35,10 @@ Credential Management
 ------------------------------------------------------------------------------
 The CLI wrapper integrates with Boto Session Manager to provide enhanced credential management:
 
-1. **Context Manager for Credentials**: When a BSM object is provided, the wrapper uses its ``awscli()`` context manager to set the
-   appropriate environment variables before running the CDK command, ensuring the command
-   uses the specified AWS credentials.
+1. **Credentials for the subprocess only**: When a BSM object is provided, :func:`~cdk_mate.cli.cli_utils.get_aws_cli_env` builds
+   the environment of the ``cdk`` subprocess from it (``AWS_PROFILE``, or the access key, secret key, and session token, plus ``AWS_REGION``).
+   ``dir_cdk`` becomes the subprocess's working directory in the same way. Your own process never changes its
+   ``os.environ`` or its working directory.
 2. **Explicit Account Selection**: This approach guarantees deployment to the correct AWS account by overriding the default credential chain, providing more reliability than profile-based selection.
 
 Example:

@@ -57,7 +57,7 @@ dev = [
 test = [
     "pytest>=9.1.1,<10.0.0",
     "pytest-cov>=7.1.0,<8.0.0",
-    "moto>=5.0.28,<6.0.0", # mock AWS (STS) so the stack synth tests need no real account
+    "moto>=5.1.22,<6.0.0", # mock AWS (STS) so the stack synth tests need no real account
 ]
 
 # docs build

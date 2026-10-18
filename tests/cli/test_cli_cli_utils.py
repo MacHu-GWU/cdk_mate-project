@@ -7,12 +7,31 @@ from cdk_mate.cli.cli_utils import kv_arg
 from cdk_mate.cli.cli_utils import array_arg
 from cdk_mate.cli.cli_utils import count_arg
 from cdk_mate.cli.cli_utils import run_cmd
+from cdk_mate.cli.cli_utils import get_aws_cli_env
+from cdk_mate.cli.cli_utils import resolve_dir_cdk
+from cdk_mate.cli.cli_utils import run_cdk_command
 
+import os
 import sys
+import json
 import subprocess
+from pathlib import Path
 
 import pytest
 from func_args.api import OPT
+from boto_session_manager.api import BotoSesManager
+
+from cdk_mate.tests.mock_aws import BaseMockAwsTest
+
+#: A child Python process that dumps its working directory and AWS env vars
+#: to the JSON file given as its first argument.
+DUMP_SCRIPT = """
+import os, sys, json
+keys = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN", "AWS_PROFILE", "AWS_REGION"]
+data = {"cwd": os.getcwd(), "env": {k: os.environ.get(k) for k in keys}}
+with open(sys.argv[1], "w") as f:
+    json.dump(data, f)
+"""
 
 
 class TestArgumentTypes:
@@ -148,6 +167,106 @@ def test_run_cmd():
 
     with pytest.raises(FileNotFoundError):
         run_cmd(["invalid-command"])
+
+
+def test_run_cmd_cwd_and_env(tmp_path: Path):
+    path_out = tmp_path / "out.json"
+    env = {**os.environ, "AWS_REGION": "eu-west-1"}
+    run_cmd([sys.executable, "-c", DUMP_SCRIPT, str(path_out)], cwd=tmp_path, env=env)
+    data = json.loads(path_out.read_text())
+    assert Path(data["cwd"]).resolve() == tmp_path.resolve()
+    assert data["env"]["AWS_REGION"] == "eu-west-1"
+
+
+class TestGetAwsCliEnv:
+    def test_access_key(self):
+        bsm = BotoSesManager(
+            aws_access_key_id="AKID",
+            aws_secret_access_key="SECRET",
+            aws_session_token="TOKEN",
+            region_name="us-east-2",
+        )
+        base_env = {
+            "AWS_PROFILE": "stale_profile",  # must not leak into the subprocess
+            "AWS_SESSION_TOKEN": "stale_token",
+            "OTHER": "kept",
+        }
+        env = get_aws_cli_env(bsm, base_env=base_env)
+        assert env == {
+            "OTHER": "kept",
+            "AWS_REGION": "us-east-2",
+            "AWS_ACCESS_KEY_ID": "AKID",
+            "AWS_SECRET_ACCESS_KEY": "SECRET",
+            "AWS_SESSION_TOKEN": "TOKEN",
+        }
+        # the caller's dict is left alone
+        assert base_env["AWS_PROFILE"] == "stale_profile"
+
+    def test_access_key_without_token(self):
+        bsm = BotoSesManager(
+            aws_access_key_id="AKID",
+            aws_secret_access_key="SECRET",
+            region_name="us-east-2",
+        )
+        env = get_aws_cli_env(bsm, base_env={"AWS_SESSION_TOKEN": "stale_token"})
+        assert "AWS_SESSION_TOKEN" not in env
+        assert env["AWS_ACCESS_KEY_ID"] == "AKID"
+
+    def test_profile(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        path_config = tmp_path / "config"
+        path_config.write_text("[profile cdk_mate_test]\nregion = ap-northeast-1\n")
+        monkeypatch.setenv("AWS_CONFIG_FILE", str(path_config))
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "stale_key")
+        bsm = BotoSesManager(profile_name="cdk_mate_test")
+        env = get_aws_cli_env(bsm)
+        assert env["AWS_PROFILE"] == "cdk_mate_test"
+        assert env["AWS_REGION"] == "ap-northeast-1"
+        assert "AWS_ACCESS_KEY_ID" not in env
+        # the current process is not changed
+        assert os.environ["AWS_ACCESS_KEY_ID"] == "stale_key"
+
+
+def test_resolve_dir_cdk(tmp_path: Path):
+    path_file = tmp_path / "deploy.py"
+    path_file.write_text("")
+    assert resolve_dir_cdk(tmp_path) == tmp_path.absolute()
+    assert resolve_dir_cdk(str(path_file)) == tmp_path.absolute()
+    with pytest.raises(NotADirectoryError):
+        resolve_dir_cdk(tmp_path / "not-exists")
+
+
+class TestRunCdkCommand(BaseMockAwsTest):
+    def test_without_bsm(self, tmp_path: Path):
+        cwd_before = os.getcwd()
+        path_out = tmp_path / "out.json"
+        run_cdk_command(
+            [sys.executable, "-c", DUMP_SCRIPT, str(path_out)],
+            dir_cdk=tmp_path,
+        )
+        data = json.loads(path_out.read_text())
+        assert Path(data["cwd"]).resolve() == tmp_path.resolve()
+        assert os.getcwd() == cwd_before
+
+    def test_with_bsm(self, tmp_path: Path):
+        env_before = dict(os.environ)
+        bsm = BotoSesManager(
+            aws_access_key_id="AKID",
+            aws_secret_access_key="SECRET",
+            region_name="us-west-2",
+        )
+        # print_who_am_i in boto-session-manager 2.1.0 fails on an account with no alias
+        bsm.iam_client.create_account_alias(AccountAlias="cdk-mate-test")
+        path_out = tmp_path / "out.json"
+        run_cdk_command(
+            [sys.executable, "-c", DUMP_SCRIPT, str(path_out)],
+            bsm=bsm,
+        )
+        data = json.loads(path_out.read_text())
+        assert data["env"]["AWS_ACCESS_KEY_ID"] == "AKID"
+        assert data["env"]["AWS_SECRET_ACCESS_KEY"] == "SECRET"
+        assert data["env"]["AWS_REGION"] == "us-west-2"
+        assert data["env"]["AWS_PROFILE"] is None
+        assert dict(os.environ) == env_before
 
 
 if __name__ == "__main__":

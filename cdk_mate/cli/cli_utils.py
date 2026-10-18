@@ -10,18 +10,17 @@ command arguments, execution contexts, and environment management.
 from __future__ import annotations
 
 import typing as T
+import os
 import subprocess
-import contextlib
 from pathlib import Path
 
 from func_args.api import OPT
 
-from ..vendor.better_pathlib import temp_cwd
-
-
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager.api import BotoSesManager
-    from pathlib_mate import T_PATH_ARG
+
+#: A file system path: a ``str`` or any ``os.PathLike``, such as ``pathlib.Path``.
+T_PATH_ARG = str | os.PathLike[str]
 
 
 class BaseArgType:
@@ -214,27 +213,42 @@ count_arg = CountArg()
 
 def run_cmd_v1(
     args: list[str],
-) -> subprocess.CompletedProcess:  # pragma: no cover
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess:
     """
     Run a terminal command using subprocess with standard output.
+
+    :param args: The command and its arguments
+    :param cwd: Run the command in this directory; ``None`` means the current one
+    :param env: The full environment of the command; ``None`` means inherit ours
     """
     cmd = " ".join(args)
     print("--- Run command ---")
     print(cmd)
-    return subprocess.run(args, check=True)
+    return subprocess.run(args, check=True, cwd=cwd, env=env)
 
 
 def run_cmd_v2(
     args: list[str],
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
     show_output: bool = True,
 ) -> subprocess.CompletedProcess:  # pragma: no cover
     """
     Run a terminal command with advanced output handling.
+
+    :param args: The command and its arguments
+    :param cwd: Run the command in this directory; ``None`` means the current one
+    :param env: The full environment of the command; ``None`` means inherit ours
+    :param show_output: Print the captured stdout and stderr
     """
     try:
         result = subprocess.run(
             args,
             check=True,
+            cwd=cwd,
+            env=env,
             capture_output=True,
             encoding="utf-8",
         )
@@ -245,39 +259,109 @@ def run_cmd_v2(
     except subprocess.CalledProcessError as e:
         print(f"Error code: {e.returncode}")
         print(f"Error message:\n{e.stderr}")
-        raise e
+        raise
 
 
 run_cmd = run_cmd_v1
 # run_cmd = run_cmd_v2
 
 
+#: Environment variables the AWS CLI and the CDK CLI read credentials from.
+#: :func:`get_aws_cli_env` removes all of them first, so a value left in the
+#: parent process can never mix with the boto session's credentials.
+AWS_CRED_ENV_VARS = (
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+    "AWS_PROFILE",
+)
+
+
+def get_aws_cli_env(
+    bsm: BotoSesManager,
+    base_env: dict[str, str] | None = None,
+) -> dict[str, str]:
+    """
+    Build the environment of a subprocess that should act as ``bsm``.
+
+    A session created from a named profile passes ``AWS_PROFILE``, so the CLI
+    resolves (and refreshes) the credentials itself. Any other session passes
+    a frozen snapshot of its access key, secret key, and session token.
+    ``AWS_REGION`` is always set. The current process is not changed.
+
+    :param bsm: The boto session the subprocess should use
+    :param base_env: The environment to start from; ``None`` means ``os.environ``
+
+    :returns: A new dict, ready for the ``env`` argument of ``subprocess.run``
+    """
+    if base_env is None:
+        env = dict(os.environ)
+    else:
+        env = dict(base_env)
+    for key in AWS_CRED_ENV_VARS:
+        env.pop(key, None)
+
+    env["AWS_REGION"] = bsm.aws_region
+    # boto_session_manager's "not set" sentinel is falsy, like None
+    if bsm.profile_name:
+        env["AWS_PROFILE"] = bsm.profile_name
+    else:
+        cred = bsm.boto_ses.get_credentials().get_frozen_credentials()
+        env["AWS_ACCESS_KEY_ID"] = cred.access_key
+        env["AWS_SECRET_ACCESS_KEY"] = cred.secret_key
+        if cred.token is not None:
+            env["AWS_SESSION_TOKEN"] = cred.token
+    return env
+
+
+def resolve_dir_cdk(dir_cdk: T_PATH_ARG) -> Path:
+    """
+    Resolve the directory a CDK command runs in.
+
+    :param dir_cdk: A directory, or a file inside it, such as ``__file__`` of
+        the deploy script next to ``cdk.json``
+
+    :raises NotADirectoryError: If the path is neither a file nor a directory
+
+    :returns: The absolute directory path
+    """
+    path = Path(dir_cdk).absolute()
+    if path.is_file():
+        path = path.parent
+    if not path.is_dir():
+        raise NotADirectoryError(f"{path} is not a directory!")
+    return path
+
+
 def run_cdk_command(
     args: list[str],
     bsm: BotoSesManager | None = None,
     dir_cdk: T_PATH_ARG | None = None,
-) -> subprocess.CompletedProcess:  # pragma: no cover
+) -> subprocess.CompletedProcess:
     """
     Execute an AWS CDK command with optional AWS session and directory context.
 
+    The directory and the credentials are handed to the subprocess only (its
+    ``cwd`` and ``env``); the working directory and ``os.environ`` of the
+    calling process never change, so this is safe to call from threads.
+
     :param args: List of CDK command arguments to execute
-    :param bsm: Optional Boto Session Manager for AWS credentials and context
-    :param dir_cdk: Optional directory path for executing the CDK command
+    :param bsm: Optional Boto Session Manager whose credentials the command uses
+    :param dir_cdk: Optional directory (or a file in it) to run the command in
 
     :raises subprocess.CalledProcessError: If the command execution fails
+    :raises NotADirectoryError: If ``dir_cdk`` does not exist
 
     :return: Completed process result from subprocess
     """
-    with contextlib.ExitStack() as stack:
-        if bsm is not None:
-            stack.enter_context(bsm.awscli())
-            print("--- Using boto session ---")
-            bsm.print_who_am_i(masked=True)
-        if dir_cdk is not None:
-            print("--- Using CDK directory ---")
-            print(dir_cdk)
-            new_dir_cdk = Path(str(dir_cdk)).absolute()
-            if new_dir_cdk.is_file():
-                new_dir_cdk = new_dir_cdk.parent
-            stack.enter_context(temp_cwd(new_dir_cdk))
-        return run_cmd(args)
+    cwd = None
+    if dir_cdk is not None:
+        cwd = resolve_dir_cdk(dir_cdk)
+        print("--- Using CDK directory ---")
+        print(cwd)
+    env = None
+    if bsm is not None:
+        print("--- Using boto session ---")
+        bsm.print_who_am_i(masked=True)
+        env = get_aws_cli_env(bsm)
+    return run_cmd(args, cwd=cwd, env=env)

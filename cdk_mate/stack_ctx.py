@@ -29,7 +29,7 @@ from .utils import to_slug
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager.api import BotoSesManager
-    from pathlib_mate import T_PATH_ARG
+    from .cli.cli_utils import T_PATH_ARG
 
 
 @dataclasses.dataclass
