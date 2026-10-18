@@ -7,20 +7,28 @@ This module provides utilities for managing stack contexts across multiple
 environments, enabling flexible and consistent infrastructure deployment.
 """
 
+from __future__ import annotations
+
 import typing as T
 import dataclasses
 
 import aws_cdk as cdk
 
-from boto_session_manager import BotoSesManager
-from func_args.api import T_KWARGS, REQ, OPT, BaseModel
+from func_args.api import T_KWARGS
+from func_args.api import REQ
+from func_args.api import OPT
+from func_args.api import BaseModel
 
-from .utils import to_camel, to_slug
-
-from .cli.cli_cmd import Synth, Diff, Deploy, Destroy
+from .cli.cli_cmd import Synth
+from .cli.cli_cmd import Diff
+from .cli.cli_cmd import Deploy
+from .cli.cli_cmd import Destroy
+from .utils import to_camel
+from .utils import to_slug
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
+    from boto_session_manager.api import BotoSesManager
     from pathlib_mate import T_PATH_ARG
 
 
@@ -33,7 +41,7 @@ class StackCtx(BaseModel):
     a stack across different environments, providing a flexible and
     reusable approach to infrastructure management.
 
-    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_ctx_enum.py>`_
+    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_ctx_enum.py>`__
 
     :param construct_id: Unique identifier for the CDK construct
     :param stack_name: Descriptive name of the stack (used in AWS CloudFormation)
@@ -42,17 +50,19 @@ class StackCtx(BaseModel):
     :param bsm: Optional Boto Session Manager for AWS credentials
     """
 
+    # fmt: off
     construct_id: str = dataclasses.field(default=REQ)
     stack_name: str = dataclasses.field(default=REQ)
     aws_account_id: str = dataclasses.field(default=REQ)
     aws_region: str = dataclasses.field(default=REQ)
-    bsm: T.Optional["BotoSesManager"] = dataclasses.field(default=None)
+    bsm: BotoSesManager | None = dataclasses.field(default=None)
+    # fmt: on
 
     @classmethod
     def make_stack_ctx_kwargs(
         cls,
         stack_name: str,
-        bsm: "BotoSesManager",
+        bsm: BotoSesManager,
     ) -> T_KWARGS:
         """
         Create a new StackCtx instance.
@@ -69,7 +79,7 @@ class StackCtx(BaseModel):
     def new(
         cls,
         stack_name: str,
-        bsm: "BotoSesManager",
+        bsm: BotoSesManager,
     ):
         """
         Create a new StackCtx instance.
@@ -133,13 +143,13 @@ class StackCtx(BaseModel):
 
     def cdk_synth(
         self,
-        dir_cdk: T.Optional["T_PATH_ARG"] = None,
+        dir_cdk: T_PATH_ARG | None = None,
         **kwargs: T_KWARGS,
     ):  # pragma: no cover
         """
         Synthesize the stack using AWS CDK CLI.
 
-        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`_
+        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`__
 
         :param dir_cdk: Optional directory path for CDK synthesis context
         """
@@ -152,13 +162,13 @@ class StackCtx(BaseModel):
 
     def cdk_diff(
         self,
-        dir_cdk: T.Optional["T_PATH_ARG"] = None,
+        dir_cdk: T_PATH_ARG | None = None,
         **kwargs: T_KWARGS,
     ):  # pragma: no cover
         """
         Show the differences between the current stack and the deployed stack.
 
-        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`_
+        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`__
 
         :param dir_cdk: Optional directory path for CDK diff context
         """
@@ -172,14 +182,14 @@ class StackCtx(BaseModel):
 
     def cdk_deploy(
         self,
-        dir_cdk: T.Optional["T_PATH_ARG"] = None,
+        dir_cdk: T_PATH_ARG | None = None,
         prompt: bool = False,
         **kwargs: T_KWARGS,
     ):  # pragma: no cover
         """
         Deploy the stack using AWS CDK CLI.
 
-        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`_
+        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`__
 
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before deployment
@@ -195,14 +205,14 @@ class StackCtx(BaseModel):
 
     def cdk_destroy(
         self,
-        dir_cdk: T.Optional["T_PATH_ARG"] = None,
+        dir_cdk: T_PATH_ARG | None = None,
         prompt: bool = False,
         **kwargs: T_KWARGS,
     ):  # pragma: no cover
         """
         Destroy the stack using AWS CDK CLI.
 
-        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`_
+        - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/stack1/stack1_deploy.py>`__
 
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before destruction
@@ -219,13 +229,13 @@ class StackCtx(BaseModel):
 
 def cdk_diff_many(
     stack_ctx_list: list[StackCtx],
-    dir_cdk: T.Optional["T_PATH_ARG"] = None,
+    dir_cdk: T_PATH_ARG | None = None,
     **kwargs: T_KWARGS,
 ):  # pragma: no cover
     """
     Show the differences between multiple stacks and their deployed versions.
 
-    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`_
+    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`__
 
     :param stack_ctx_list: List of stack contexts to compare
     :param dir_cdk: Optional directory path for CDK context
@@ -242,14 +252,14 @@ def cdk_diff_many(
 
 def cdk_deploy_many(
     stack_ctx_list: list[StackCtx],
-    dir_cdk: T.Optional["T_PATH_ARG"] = None,
+    dir_cdk: T_PATH_ARG | None = None,
     prompt: bool = False,
     **kwargs: T_KWARGS,
 ):  # pragma: no cover
     """
     Deploy multiple stacks in a single operation.
 
-    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`_
+    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`__
 
     :param stack_ctx_list: List of stack contexts to deploy
     :param dir_cdk: Optional directory path for CDK deployment context
@@ -268,14 +278,14 @@ def cdk_deploy_many(
 
 def cdk_destroy_many(
     stack_ctx_list: list[StackCtx],
-    dir_cdk: T.Optional["T_PATH_ARG"] = None,
+    dir_cdk: T_PATH_ARG | None = None,
     prompt: bool = False,
     **kwargs: T_KWARGS,
 ):  # pragma: no cover
     """
     Destroy multiple stacks in a single operation.
 
-    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`_
+    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`__
 
     :param stack_ctx_list: List of stack contexts to destroy
     :param dir_cdk: Optional directory path for CDK deployment context

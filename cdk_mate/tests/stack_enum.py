@@ -11,7 +11,6 @@ import aws_cdk as cdk
 
 from .stacks.stack1.iac_define import Stack1
 from .stacks.stack2.iac_define import Stack2
-
 from .stack_ctx_enum import stack_ctx_enum
 
 

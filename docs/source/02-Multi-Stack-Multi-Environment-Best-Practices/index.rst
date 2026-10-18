@@ -172,13 +172,13 @@ Deploy multiple stacks to the same environment:
 
 Testing
 ------------------------------------------------------------------------------
-The pattern includes a testing approach that synthesizes stacks without deployment (`tests/test_stack_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_enum.py>`_):
+The pattern includes a testing approach that synthesizes stacks without deployment (`tests/test_stack_ctx.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_ctx.py>`_). It runs under a moto mock (`cdk_mate/tests/mock_aws.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/mock_aws.py>`_), so it needs no AWS account, only ``node`` for aws-cdk-lib:
 
-.. dropdown:: test_stack_enum.py
+.. dropdown:: test_stack_ctx.py
 
-    .. literalinclude:: ../../../tests/test_stack_enum.py
+    .. literalinclude:: ../../../tests/test_stack_ctx.py
        :language: python
-       :linenos:
+       :pyobject: TestStackCtxSynth
 
 
 Usage Guide

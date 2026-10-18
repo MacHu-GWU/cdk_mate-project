@@ -22,11 +22,22 @@
 
 import os
 from datetime import datetime
-import cdk_mate as package
+from importlib.metadata import version as get_version
+from importlib.metadata import metadata
 
-package_name = package.__name__
-package_author = package.__author__
-package_version = package.__version__
+# Get package metadata from installed package (via pyproject.toml)
+package_name = "cdk_mate"
+_meta = metadata(package_name)
+
+# Extract version
+package_version = get_version(package_name)
+
+# Extract author from "Author-email: Name <email@example.com>" format
+_author_email_raw = _meta.get("Author-email", "")
+if _author_email_raw and "<" in _author_email_raw:
+    package_author = _author_email_raw.split("<")[0].strip()
+else:
+    package_author = _meta.get("Author", "Unknown")
 
 # -- General configuration ------------------------------------------------
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -242,7 +253,8 @@ docfly.ApiDocGenerator(
         f"{package_name}.tests",
         f"{package_name}.vendor",
         # Module
-        f"{package_name}._version",
         f"{package_name}.paths",
+        # ``cdk_mate/cli/`` is a public subpackage (CDK CLI wrappers), not a
+        # python-fire ``cli.py``, so it stays in the API reference.
     ],
 ).fly()

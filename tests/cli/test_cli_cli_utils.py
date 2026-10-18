@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from cdk_mate.cli.cli_utils import pos_arg
+from cdk_mate.cli.cli_utils import value_arg
+from cdk_mate.cli.cli_utils import bool_arg
+from cdk_mate.cli.cli_utils import kv_arg
+from cdk_mate.cli.cli_utils import array_arg
+from cdk_mate.cli.cli_utils import count_arg
+from cdk_mate.cli.cli_utils import run_cmd
+
+import sys
+import subprocess
+
 import pytest
 from func_args.api import OPT
-from cdk_mate.cli.cli_utils import (
-    pos_arg,
-    value_arg,
-    bool_arg,
-    kv_arg,
-    array_arg,
-    count_arg,
-)
 
 
 class TestArgumentTypes:
@@ -134,6 +137,17 @@ class TestArgumentTypes:
         args = []
         count_arg.process("verbose", OPT, args)
         assert args == []
+
+
+def test_run_cmd():
+    # sys.executable, not "pip": a uv-managed .venv has no pip
+    run_cmd([sys.executable, "--version"])
+
+    with pytest.raises(subprocess.CalledProcessError):
+        run_cmd([sys.executable, "-c", "raise SystemExit(1)"])
+
+    with pytest.raises(FileNotFoundError):
+        run_cmd(["invalid-command"])
 
 
 if __name__ == "__main__":

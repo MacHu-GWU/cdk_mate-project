@@ -44,7 +44,7 @@ Example:
 
 .. code-block:: python
 
-    from boto_session_manager import BotoSesManager
+    from boto_session_manager.api import BotoSesManager
     import cdk_mate.api as cdk_mate
 
     # Create a session for a specific AWS account and region
@@ -88,7 +88,7 @@ Prepare an AWS environment for CDK deployments:
 
 .. code-block:: python
 
-    from boto_session_manager import BotoSesManager
+    from boto_session_manager.api import BotoSesManager
     import cdk_mate.cli as cdk_mate
 
     bsm = BotoSesManager(
@@ -142,7 +142,7 @@ Deploy a stack using explicit AWS credentials:
 
 .. code-block:: python
 
-    from boto_session_manager import BotoSesManager
+    from boto_session_manager.api import BotoSesManager
     import cdk_mate.api as cdk_mate
 
     bsm = BotoSesManager(

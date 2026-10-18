@@ -22,24 +22,25 @@ deploy, destroy, etc.) with comprehensive option handling and flexible execution
     ).run()
 """
 
+from __future__ import annotations
+
 import typing as T
 import dataclasses
 
-from func_args.api import REQ, OPT, BaseModel
+from func_args.api import OPT
+from func_args.api import BaseModel
 
-from .cli_utils import (
-    pos_arg,
-    value_arg,
-    bool_arg,
-    kv_arg,
-    array_arg,
-    count_arg,
-    run_cdk_command,
-)
+from .cli_utils import pos_arg
+from .cli_utils import value_arg
+from .cli_utils import bool_arg
+from .cli_utils import kv_arg
+from .cli_utils import array_arg
+from .cli_utils import count_arg
+from .cli_utils import run_cdk_command
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from pathlib_mate import T_PATH_ARG
-    from boto_session_manager import BotoSesManager
+    from boto_session_manager.api import BotoSesManager
 
 
 @dataclasses.dataclass
@@ -107,9 +108,11 @@ class BaseCommand(BaseModel):
         """
         Process a field based on its metadata type.
         """
-        name = field.name.replace("_", "-")
+        name = field.name
+        # a trailing "_" avoids a Python keyword, e.g. ``import_`` -> ``--import``
         if name.endswith("_"):
             name = name[:-1]
+        name = name.replace("_", "-")
         field.metadata["t"].process(
             name=name,
             value=getattr(self, field.name),
@@ -146,8 +149,8 @@ class BaseCommand(BaseModel):
 
     def run(
         self,
-        bsm: T.Optional["BotoSesManager"] = None,
-        dir_cdk: T.Optional["T_PATH_ARG"] = None,
+        bsm: BotoSesManager | None = None,
+        dir_cdk: T_PATH_ARG | None = None,
     ):  # pragma: no cover
         """
         Execute the CDK command with the configured parameters.
@@ -177,7 +180,7 @@ class Acknowledge(BaseCommand):
     notice_id: str = dataclasses.field(default=OPT, metadata={"t": pos_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "acknowledge"]
 
 
@@ -212,7 +215,7 @@ class Bootstrap(BaseCommand):
     trust_for_lookup: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "bootstrap"]
 
 
@@ -231,7 +234,7 @@ class Context(BaseCommand):
 
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "context"]
 
 
@@ -265,12 +268,12 @@ class Deploy(BaseCommand):
     previous_parameters: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     progress: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     require_approval: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
-    rollback: T.Optional[bool] = dataclasses.field(default=None, metadata={"t": bool_arg})
+    rollback: bool | None = dataclasses.field(default=None, metadata={"t": bool_arg})
     toolkit_stack_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     watch: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "deploy"]
 
 
@@ -289,7 +292,7 @@ class Destroy(BaseCommand):
     force: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "destroy"]
 
 
@@ -314,7 +317,7 @@ class Diff(BaseCommand):
     template: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "diff"]
 
 
@@ -340,7 +343,7 @@ class GC(BaseCommand):
 
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "gc"]
 
 
@@ -362,11 +365,11 @@ class Import(BaseCommand):
     force: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     record_resource_mapping: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     resource_mapping: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
-    rollback: T.Optional[bool] = dataclasses.field(default=None, metadata={"t": bool_arg})
+    rollback: bool | None = dataclasses.field(default=None, metadata={"t": bool_arg})
     toolkit_stack_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "import"]
 
 
@@ -386,7 +389,7 @@ class Init(BaseCommand):
 
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _cdk_cmd(self) -> list[str]:
         return ["cdk", "init"]
 
 

@@ -15,6 +15,7 @@ class StackCtxEnum:
     """
     Use lazy loading to create enum values.
     """
+
     @cached_property
     def stack1_dev(self):
         return StackCtx.new(

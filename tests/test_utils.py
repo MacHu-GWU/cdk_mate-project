@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from cdk_mate.utils import to_camel, to_slug
+from cdk_mate.utils import to_camel
+from cdk_mate.utils import to_slug
 
 
 def test_to_camel():

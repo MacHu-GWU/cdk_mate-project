@@ -7,6 +7,8 @@ This module provides a set of utility classes and functions for handling AWS CDK
 command arguments, execution contexts, and environment management.
 """
 
+from __future__ import annotations
+
 import typing as T
 import subprocess
 import contextlib
@@ -18,7 +20,7 @@ from ..vendor.better_pathlib import temp_cwd
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
-    from boto_session_manager import BotoSesManager
+    from boto_session_manager.api import BotoSesManager
     from pathlib_mate import T_PATH_ARG
 
 
@@ -116,7 +118,7 @@ class BoolArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[T.Literal["OPT"], bool],
+        value: T.Literal["OPT"] | bool,
         args: list[str],
     ):
         if value is OPT:
@@ -140,7 +142,7 @@ class KeyValueArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[T.Literal["OPT"], dict[str, str]],
+        value: T.Literal["OPT"] | dict[str, str],
         args: list[str],
     ):
         if value is OPT:
@@ -166,7 +168,7 @@ class ArrayArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[T.Literal["OPT"], list[str]],
+        value: T.Literal["OPT"] | list[str],
         args: list[str],
     ):
         if value is OPT:
@@ -192,7 +194,7 @@ class CountArg(BaseArgType):
     def process(
         self,
         name: str,
-        value: T.Union[T.Literal["OPT"], int],
+        value: T.Literal["OPT"] | int,
         args: list[str],
     ):
         if value is OPT:
@@ -217,7 +219,7 @@ def run_cmd_v1(
     Run a terminal command using subprocess with standard output.
     """
     cmd = " ".join(args)
-    print(f"--- Run command ---")
+    print("--- Run command ---")
     print(cmd)
     return subprocess.run(args, check=True)
 
@@ -252,8 +254,8 @@ run_cmd = run_cmd_v1
 
 def run_cdk_command(
     args: list[str],
-    bsm: T.Optional["BotoSesManager"] = None,
-    dir_cdk: T.Optional["T_PATH_ARG"] = None,
+    bsm: BotoSesManager | None = None,
+    dir_cdk: T_PATH_ARG | None = None,
 ) -> subprocess.CompletedProcess:  # pragma: no cover
     """
     Execute an AWS CDK command with optional AWS session and directory context.
@@ -267,18 +269,15 @@ def run_cdk_command(
     :return: Completed process result from subprocess
     """
     with contextlib.ExitStack() as stack:
-        bsm_tmp = None if bsm is None else stack.enter_context(bsm.awscli())
         if bsm is not None:
+            stack.enter_context(bsm.awscli())
             print("--- Using boto session ---")
             bsm.print_who_am_i(masked=True)
         if dir_cdk is not None:
-            print(f"---Using CDK directory ---")
+            print("--- Using CDK directory ---")
             print(dir_cdk)
-        if dir_cdk is None:
-            tmp_cwd = None
-        else:
             new_dir_cdk = Path(str(dir_cdk)).absolute()
             if new_dir_cdk.is_file():
                 new_dir_cdk = new_dir_cdk.parent
-            tmp_cdk = stack.enter_context(temp_cwd(new_dir_cdk))
+            stack.enter_context(temp_cwd(new_dir_cdk))
         return run_cmd(args)
