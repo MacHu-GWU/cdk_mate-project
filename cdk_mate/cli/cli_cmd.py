@@ -63,12 +63,23 @@ class BaseCommand(BaseModel):
 
     The class uses a metadata-driven approach to process different argument types,
     allowing for a clean, declarative command definition.
+
+    Two fields are not CDK options; they control how the command line is built:
+
+    - ``cdk_cmd``: the executable, ``["cdk"]`` by default. Use it to pin a CLI
+      version per project, such as ``["npx", "aws-cdk@2.1145.0"]``.
+    - ``extra_args``: arguments appended verbatim at the end, for any option
+      this library does not define yet, such as ``["--tags", "team=data"]``.
+      An option the installed CLI does not know is ignored by the CLI with a
+      warning (exit code 0), so check that your CLI version supports it.
     """
 
     # fmt: off
+    cdk_cmd: list[str] = dataclasses.field(default=OPT)
+    extra_args: list[str] = dataclasses.field(default=OPT)
     app: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     asset_metadata: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
-    builder: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    build: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     ca_bundle_path: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     ci: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     context: dict[str, str] = dataclasses.field(default=OPT, metadata={"t": kv_arg})
@@ -85,18 +96,20 @@ class BaseCommand(BaseModel):
     plugin: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
     profile: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     proxy: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
+    region: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     role_arn: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     staging: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     strict: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     trace: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
+    unstable: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
     verbose: int = dataclasses.field(default=OPT, metadata={"t": count_arg})
     version: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     version_reporting: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:  # pragma: no cover
+    def _subcommand(self) -> list[str]:  # pragma: no cover
         """
-        Return the base CDK command to be executed.
+        Return the CDK subcommand, such as ``["deploy"]``.
         """
         raise NotImplementedError
 
@@ -123,27 +136,28 @@ class BaseCommand(BaseModel):
         """
         Convert the command object to a list of CLI arguments.
         """
-        args = self._cdk_cmd()
+        if self.cdk_cmd is OPT:
+            args = ["cdk"]
+        else:
+            args = list(self.cdk_cmd)
+        args.extend(self._subcommand())
 
-        global_fields: dict[str, dataclasses.Field] = {
-            field.name: field for field in dataclasses.fields(BaseCommand)
-        }
+        base_fields = dataclasses.fields(BaseCommand)
+        base_field_names = {field.name for field in base_fields}
 
-        command_fields: dict[str, dataclasses.Field] = {
-            field.name: field for field in dataclasses.fields(self.__class__)
-        }
-
-        # process command-specific fields first
-        for name in command_fields:
-            if name not in global_fields:
-                field = command_fields[name]
-                # print(f"{field = }")  # for debug only
+        # command-specific fields first, so positional arguments follow the subcommand
+        for field in dataclasses.fields(self.__class__):
+            if field.name not in base_field_names:
                 self._process(args, field)
 
-        # then process global fields
-        for field in global_fields.values():
-            # print(f"{field = }")  # for debug only
-            self._process(args, field)
+        # then the global options; cdk_cmd and extra_args have no "t" (arg type),
+        # because they are not CDK options
+        for field in base_fields:
+            if "t" in field.metadata:
+                self._process(args, field)
+
+        if self.extra_args is not OPT:
+            args.extend(self.extra_args)
 
         return args
 
@@ -180,8 +194,8 @@ class Acknowledge(BaseCommand):
     notice_id: str = dataclasses.field(default=OPT, metadata={"t": pos_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "acknowledge"]
+    def _subcommand(self) -> list[str]:
+        return ["acknowledge"]
 
 
 @dataclasses.dataclass
@@ -215,8 +229,8 @@ class Bootstrap(BaseCommand):
     trust_for_lookup: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "bootstrap"]
+    def _subcommand(self) -> list[str]:
+        return ["bootstrap"]
 
 
 @dataclasses.dataclass
@@ -234,8 +248,8 @@ class Context(BaseCommand):
 
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "context"]
+    def _subcommand(self) -> list[str]:
+        return ["context"]
 
 
 @dataclasses.dataclass
@@ -273,8 +287,8 @@ class Deploy(BaseCommand):
     watch: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "deploy"]
+    def _subcommand(self) -> list[str]:
+        return ["deploy"]
 
 
 @dataclasses.dataclass
@@ -292,8 +306,8 @@ class Destroy(BaseCommand):
     force: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "destroy"]
+    def _subcommand(self) -> list[str]:
+        return ["destroy"]
 
 
 @dataclasses.dataclass
@@ -317,8 +331,8 @@ class Diff(BaseCommand):
     template: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "diff"]
+    def _subcommand(self) -> list[str]:
+        return ["diff"]
 
 
 @dataclasses.dataclass
@@ -326,7 +340,8 @@ class GC(BaseCommand):
     """
     Perform garbage collection on unused assets stored in the resources of your bootstrap stack.
 
-    Note: This command is still in development and requires the --unstable=gc option.
+    Note: This command is still in development and requires the ``--unstable=gc``
+    option, so pass ``unstable=["gc"]``.
 
     Ref: https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-gc.html
     """
@@ -339,12 +354,10 @@ class GC(BaseCommand):
     created_buffer_days: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
     rollback_buffer_days: int = dataclasses.field(default=OPT, metadata={"t": value_arg})
     type: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
-    unstable: list[str] = dataclasses.field(default=OPT, metadata={"t": array_arg})
-
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "gc"]
+    def _subcommand(self) -> list[str]:
+        return ["gc"]
 
 
 @dataclasses.dataclass
@@ -369,8 +382,8 @@ class Import(BaseCommand):
     toolkit_stack_name: str = dataclasses.field(default=OPT, metadata={"t": value_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "import"]
+    def _subcommand(self) -> list[str]:
+        return ["import"]
 
 
 @dataclasses.dataclass
@@ -389,8 +402,8 @@ class Init(BaseCommand):
 
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "init"]
+    def _subcommand(self) -> list[str]:
+        return ["init"]
 
 
 @dataclasses.dataclass
@@ -402,10 +415,11 @@ class Synth(BaseCommand):
     """
 
     # fmt: off
+    stacks: list[str] = dataclasses.field(default=OPT, metadata={"t": pos_arg})
     exclusively: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     quiet: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     validation: bool = dataclasses.field(default=OPT, metadata={"t": bool_arg})
     # fmt: on
 
-    def _cdk_cmd(self) -> list[str]:
-        return ["cdk", "synth"]
+    def _subcommand(self) -> list[str]:
+        return ["synth"]

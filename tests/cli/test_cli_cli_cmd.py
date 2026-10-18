@@ -68,11 +68,60 @@ def test_bool_option():
         "StackA",
         "--force",
     ]
-    assert Synth(quiet=True, no_color=True).to_args() == [
+    assert Synth(stacks=["StackA"], quiet=True, no_color=True).to_args() == [
         "cdk",
         "synth",
+        "StackA",
         "--quiet",
         "--no-color",
+    ]
+    # False turns off an option that is on by default
+    assert Deploy(rollback=False, staging=False).to_args() == [
+        "cdk",
+        "deploy",
+        "--no-rollback",
+        "--no-staging",
+    ]
+    assert GC(confirm=False).to_args() == ["cdk", "gc", "--no-confirm"]
+
+
+def test_global_options():
+    args = GC(
+        unstable=["gc"],
+        region="us-east-2",
+        build="make",
+    ).to_args()
+    assert args == [
+        "cdk",
+        "gc",
+        "--build",
+        "make",
+        "--region",
+        "us-east-2",
+        "--unstable",
+        "gc",
+    ]
+
+
+def test_cdk_cmd():
+    args = Synth(cdk_cmd=["npx", "aws-cdk@2.1145.0"], quiet=True).to_args()
+    assert args == ["npx", "aws-cdk@2.1145.0", "synth", "--quiet"]
+
+
+def test_extra_args():
+    args = Deploy(
+        stacks=["StackA"],
+        profile="my_profile",
+        extra_args=["--tags", "team=data"],
+    ).to_args()
+    assert args == [
+        "cdk",
+        "deploy",
+        "StackA",
+        "--profile",
+        "my_profile",
+        "--tags",
+        "team=data",
     ]
 
 

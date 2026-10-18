@@ -86,17 +86,26 @@ class TestArgumentTypes:
         args = []
 
         # Test with True value
-        bool_arg.process("help", True, args)
-        assert args == ["--help"]
+        bool_arg.process("rollback", True, args)
+        assert args == ["--rollback"]
 
-        # Test with False value (should be ignored)
+        # Test with False value (turns off an option that is on by default)
         args = []
-        bool_arg.process("help", False, args)
+        bool_arg.process("rollback", False, args)
+        assert args == ["--no-rollback"]
+
+        # Test with an already negative option: False is its default
+        args = []
+        bool_arg.process("no-color", True, args)
+        assert args == ["--no-color"]
+        args = []
+        bool_arg.process("no-color", False, args)
         assert args == []
 
-        # Test with OPT value (should be ignored)
+        # Test with OPT and None value (should be ignored)
         args = []
-        bool_arg.process("help", OPT, args)
+        bool_arg.process("rollback", OPT, args)
+        bool_arg.process("rollback", None, args)
         assert args == []
 
     def test_key_value_arg(self):

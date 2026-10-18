@@ -106,24 +106,31 @@ class BoolArg(BaseArgType):
     """
     Process a boolean argument for CLI commands.
 
+    ``True`` becomes ``--name`` and ``False`` becomes ``--no-name``, so an
+    option that is on by default in the CDK CLI (``--rollback``, ``--staging``,
+    ``--confirm``, ...) can be turned off. ``OPT`` and ``None`` pass nothing,
+    leaving the CLI default. An option that is already negative, such as
+    ``--no-color``, passes nothing for ``False``.
+
     Example::
 
-        name = "help"
-        value = True
-        # will be encoded as
-        "--help"
+        name = "rollback"
+        value = True   # will be encoded as "--rollback"
+        value = False  # will be encoded as "--no-rollback"
     """
 
     def process(
         self,
         name: str,
-        value: T.Literal["OPT"] | bool,
+        value: T.Literal["OPT"] | bool | None,
         args: list[str],
     ):
-        if value is OPT:
+        if value is OPT or value is None:
             return
         if value:
             args.append(f"--{name}")
+        elif not name.startswith("no-"):
+            args.append(f"--no-{name}")
 
 
 class KeyValueArg(BaseArgType):

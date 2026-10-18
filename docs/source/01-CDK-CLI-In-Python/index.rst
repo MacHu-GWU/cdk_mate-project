@@ -65,7 +65,7 @@ Directory Context Management
 ------------------------------------------------------------------------------
 The CLI wrapper handles directory context automatically:
 
-1. **Automatic Directory Location**: The ``dir_cdk`` parameter allows specifying the location of the ``cdk.json`` file, and the wrapper handles changing to that directory before executing commands.
+1. **Automatic Directory Location**: The ``dir_cdk`` parameter allows specifying the location of the ``cdk.json`` file, and the wrapper runs the ``cdk`` subprocess in that directory (your own working directory does not change).
 2. **Path Resolution**: If a file path is provided, the wrapper uses its parent directory, ensuring flexibility in how paths are specified.
 
 Example::
@@ -77,6 +77,30 @@ Example::
 
     # Using a file path (will use the file's directory)
     cdk_mate.cli.Synth().run(dir_cdk="/path/to/my/cdk/project/stack1_app.py")
+
+
+Options and CLI Versions
+------------------------------------------------------------------------------
+Every option defaults to "not set", and an option that is not set never reaches the command line, so the CDK CLI uses its own default. A newer ``cdk_mate`` therefore works with an older CDK CLI, as long as you only set options that CLI knows.
+
+- **Booleans:** ``True`` passes ``--name`` and ``False`` passes ``--no-name``, so options that are on by default can be turned off, such as ``Deploy(rollback=False)`` for ``--no-rollback`` or ``GC(confirm=False)`` for ``--no-confirm``.
+- **Options this library does not define yet:** pass them verbatim with ``extra_args``; they go at the end of the command line.
+- **A specific CLI version:** set ``cdk_cmd``, the executable that runs the subcommand (``["cdk"]`` by default).
+
+.. code-block:: python
+
+    import cdk_mate.api as cdk_mate
+
+    cdk_mate.cli.Deploy(
+        stacks=["MyStack"],
+        rollback=False,  # --no-rollback
+        extra_args=["--tags", "team=data"],  # an option not defined in Deploy
+        cdk_cmd=["npx", "aws-cdk@2.1145.0"],  # pin the CLI version
+    ).run(dir_cdk=__file__)
+
+.. important::
+
+    The CDK CLI does not fail on an option it does not know: it prints ``Unknown option(s): ... These will be ignored.`` and carries on with exit code 0. When you set an option, make sure your CLI version supports it, for example by pinning the CLI version in your project.
 
 
 Usage Examples
