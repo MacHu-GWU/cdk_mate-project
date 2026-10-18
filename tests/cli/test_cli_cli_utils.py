@@ -9,12 +9,13 @@ from cdk_mate.cli.cli_utils import count_arg
 from cdk_mate.cli.cli_utils import run_cmd
 from cdk_mate.cli.cli_utils import get_aws_cli_env
 from cdk_mate.cli.cli_utils import resolve_dir_cdk
-from cdk_mate.cli.cli_utils import print_aws_identity
+from cdk_mate.cli.cli_utils import log_aws_identity
 from cdk_mate.cli.cli_utils import run_cdk_command
 
 import os
 import sys
 import json
+import logging
 import subprocess
 from pathlib import Path
 
@@ -22,6 +23,7 @@ import pytest
 from func_args.api import OPT
 from boto_session_manager.api import BotoSesManager
 
+from cdk_mate.logger import logger
 from cdk_mate.tests.mock_aws import BaseMockAwsTest
 
 #: A child Python process that dumps its working directory and AWS env vars
@@ -245,21 +247,37 @@ def test_resolve_dir_cdk(tmp_path: Path):
         resolve_dir_cdk(tmp_path / "not-exists")
 
 
-class TestPrintAwsIdentity(BaseMockAwsTest):
+class TestLogAwsIdentity(BaseMockAwsTest):
     def test_ok(self, capsys: pytest.CaptureFixture):
         bsm = BotoSesManager(region_name="us-east-1")
-        print_aws_identity(bsm)
-        assert "AWS Account Id" in capsys.readouterr().out
+        log_aws_identity(bsm)
+        out = capsys.readouterr().out
+        assert "AWS Account Id = 12" in out
+        assert "Principal Arn = " in out
+        assert "AWS Region = us-east-1" in out
 
     def test_failure_is_a_warning(self, capsys: pytest.CaptureFixture):
-        class DeniedBsm:
-            def print_who_am_i(self, masked: bool = True):
-                raise PermissionError("AccessDenied: iam:ListAccountAliases")
+        class ExpiredBsm:
+            @property
+            def masked_aws_account_id(self):
+                raise PermissionError("ExpiredToken")
 
-        print_aws_identity(DeniedBsm())
+        log_aws_identity(ExpiredBsm())
         out = capsys.readouterr().out
         assert "Warning: cannot show the AWS identity" in out
         assert "PermissionError" in out
+
+    def test_no_aws_call_when_silenced(self, capsys: pytest.CaptureFixture):
+        class ForbiddenBsm:
+            def __getattr__(self, name):
+                raise AssertionError(f"unexpected AWS call: {name}")
+
+        logger.setLevel(logging.WARNING)
+        try:
+            log_aws_identity(ForbiddenBsm())
+        finally:
+            logger.setLevel(logging.INFO)
+        assert capsys.readouterr().out == ""
 
 
 class TestRunCdkCommand(BaseMockAwsTest):

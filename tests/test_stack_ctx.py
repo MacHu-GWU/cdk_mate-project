@@ -103,6 +103,11 @@ class TestStackCtxSynth(BaseMockAwsTest):
             "cdk-mate-stack2-dev",
             "cdk-mate-stack2-test",
         }
+        for stack in cloud_assembly.stacks:
+            resources = stack.template["Resources"].values()
+            parameters = [r for r in resources if r["Type"] == "AWS::SSM::Parameter"]
+            assert len(parameters) == 1
+            assert parameters[0]["Properties"]["Name"] == f"/{stack.stack_name}/example"
 
 
 if __name__ == "__main__":

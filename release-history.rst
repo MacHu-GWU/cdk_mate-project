@@ -57,16 +57,17 @@ x.y.z (Backlog)
     - ``Import``: ``notification_arns``, ``resource_mapping_inline``
     - ``Init``: ``from_path``, ``lib_version``, ``package_manager``, ``project_name``, ``template_path``
     - ``Synth``: ``watch``
+- Report progress (console URLs, the AWS identity, the CDK directory, the command line) through the standard ``logging`` module under the logger name ``cdk_mate``, instead of ``print``. By default it still writes plain messages to stdout, so the output looks the same; ``logging.getLogger("cdk_mate").setLevel(logging.WARNING)`` silences it.
 - Every option field is documented with the CDK CLI's own description, its CLI default, and whether it is deprecated, so the API reference lists them all. Options with fixed choices are typed as ``Literal``, such as ``Deploy.require_approval``.
 
 **Minor Improvements**
 
 - ``Command.run()``, ``StackCtx.cdk_*()`` and ``cdk_*_many()`` no longer change the working directory or ``os.environ`` of the calling process: ``dir_cdk`` and the credentials of ``bsm`` are passed to the ``cdk`` subprocess only, so these calls are safe to use from threads.
 - A session created from a named profile passes ``AWS_PROFILE`` to the ``cdk`` subprocess; any other session passes a frozen snapshot of its access key, secret key and session token. ``AWS_REGION`` is always set.
-- Printing the AWS identity before a command no longer fails the command: an error, such as a role without ``iam:ListAccountAliases``, prints a warning and the command still runs.
+- The AWS identity reported before a command needs only ``sts:GetCallerIdentity``: it shows the masked account, principal ARN and region, and no longer calls ``iam:ListAccountAliases`` (no more ``User Id`` and ``AWS Account Alias`` lines). A failure, such as expired credentials, logs a warning and the command still runs. When the ``cdk_mate`` logger is quieter than ``INFO``, no AWS call is made.
 - ``cdk_diff_many()``, ``cdk_deploy_many()`` and ``cdk_destroy_many()`` raise ``ValueError`` on an empty list (was ``IndexError``), and print a warning when the stacks target more than one AWS account or region, since all of them run with the credentials of the first stack.
 - ``Deploy.rollback`` and ``Import.rollback`` default to ``OPT`` like every other option (was ``None``); both pass nothing to the CLI.
-- Raise the floor of ``aws-cdk-lib`` to ``>=2.273.0`` (was ``>=2.179.0``) and of ``func-args`` to ``>=1.0.2`` (was ``>=1.0.0``), and declare ``constructs>=10.8.1,<11.0.0`` explicitly.
+- Lower the floor of ``aws-cdk-lib`` to ``>=2.0.0`` (was ``>=2.179.0``): cdk_mate only needs ``aws_cdk.Environment``, so it no longer forces an ``aws-cdk-lib`` upgrade. Declare ``constructs>=10.0.0,<11.0.0`` explicitly, and raise the floor of ``func-args`` to ``>=1.0.2`` (was ``>=1.0.0``).
 
 **Bugfixes**
 
@@ -77,6 +78,8 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 - ``cdk_mate/cli/cli_cmd.py`` is now generated from ``lib/cli/cli-type-registry.json`` of the ``aws-cdk`` npm package by ``mise run gen-cli-cmd``; after a CLI upgrade, the diff of the regenerated file shows which options changed. The behavior shared by all commands moves to ``cdk_mate/cli/cli_cmd_base.py``. A test keeps every option field name of 0.1.6.
+- CI adds a job that installs every direct dependency at its declared floor (``uv sync --resolution lowest-direct``) on Python 3.11 and 3.14, so the floors in ``pyproject.toml`` stay tested versions.
+- The example stacks behind ``cdk/`` and the tests each create a free SSM parameter, ``/<stack name>/example``, instead of being empty.
 - Move the project tooling from Poetry to uv, mise and setuptools, following the pywf open-source template; CI and Read the Docs build with uv.
 - The unit tests run without any AWS account: they synthesize the example stacks under a moto mock, locally and in CI alike. They need ``node``, which aws-cdk-lib runs on; CI and Read the Docs now install it.
 - Document how options reach the CLI: unset options, ``False``, ``extra_args``, ``cdk_cmd``, and the CDK CLI ignoring unknown options.

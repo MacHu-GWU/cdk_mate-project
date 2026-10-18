@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import typing as T
 import os
+import logging
 import subprocess
 from pathlib import Path
 
 from func_args.api import OPT
+
+from ..logger import logger
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from boto_session_manager.api import BotoSesManager
@@ -219,59 +222,23 @@ array_arg = ArrayArg()
 count_arg = CountArg()
 
 
-def run_cmd_v1(
+def run_cmd(
     args: list[str],
     cwd: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """
-    Run a terminal command using subprocess with standard output.
+    Run a terminal command; its output goes straight to the terminal.
 
     :param args: The command and its arguments
     :param cwd: Run the command in this directory; ``None`` means the current one
     :param env: The full environment of the command; ``None`` means inherit ours
+
+    :raises subprocess.CalledProcessError: If the command exits with a non-zero code
     """
-    cmd = " ".join(args)
-    print("--- Run command ---")
-    print(cmd)
+    logger.info("--- Run command ---")
+    logger.info(" ".join(args))
     return subprocess.run(args, check=True, cwd=cwd, env=env)
-
-
-def run_cmd_v2(
-    args: list[str],
-    cwd: Path | None = None,
-    env: dict[str, str] | None = None,
-    show_output: bool = True,
-) -> subprocess.CompletedProcess:  # pragma: no cover
-    """
-    Run a terminal command with advanced output handling.
-
-    :param args: The command and its arguments
-    :param cwd: Run the command in this directory; ``None`` means the current one
-    :param env: The full environment of the command; ``None`` means inherit ours
-    :param show_output: Print the captured stdout and stderr
-    """
-    try:
-        result = subprocess.run(
-            args,
-            check=True,
-            cwd=cwd,
-            env=env,
-            capture_output=True,
-            encoding="utf-8",
-        )
-        if show_output:
-            print(result.stdout)
-            print(result.stderr)
-        return result
-    except subprocess.CalledProcessError as e:
-        print(f"Error code: {e.returncode}")
-        print(f"Error message:\n{e.stderr}")
-        raise
-
-
-run_cmd = run_cmd_v1
-# run_cmd = run_cmd_v2
 
 
 #: Environment variables the AWS CLI and the CDK CLI read credentials from.
@@ -341,19 +308,26 @@ def resolve_dir_cdk(dir_cdk: T_PATH_ARG) -> Path:
     return path
 
 
-def print_aws_identity(bsm: BotoSesManager) -> None:
+def log_aws_identity(bsm: BotoSesManager) -> None:
     """
-    Print the AWS account and principal that ``bsm`` acts as, masked.
+    Log the AWS account, principal, and region that ``bsm`` acts as, masked.
 
-    This is informational only, so a failure (for example a role without
-    ``iam:ListAccountAliases``, or expired credentials) prints a warning
-    instead of raising. A real credential problem still surfaces when the
-    CDK command runs.
+    It needs one ``sts:GetCallerIdentity`` call and nothing else, and it makes
+    no call at all when the ``cdk_mate`` logger is quieter than ``INFO``. It is
+    informational only, so a failure (for example expired credentials) logs a
+    warning instead of raising; a real credential problem still surfaces when
+    the CDK command runs.
     """
+    if not logger.isEnabledFor(logging.INFO):
+        return
     try:
-        bsm.print_who_am_i(masked=True)
+        logger.info(f"AWS Account Id = {bsm.masked_aws_account_id}")
+        logger.info(f"Principal Arn = {bsm.masked_principal_arn}")
+        logger.info(f"AWS Region = {bsm.aws_region}")
     except Exception as e:
-        print(f"Warning: cannot show the AWS identity ({type(e).__name__}: {e})")
+        logger.warning(
+            f"Warning: cannot show the AWS identity ({type(e).__name__}: {e})"
+        )
 
 
 def run_cdk_command(
@@ -380,11 +354,11 @@ def run_cdk_command(
     cwd = None
     if dir_cdk is not None:
         cwd = resolve_dir_cdk(dir_cdk)
-        print("--- Using CDK directory ---")
-        print(cwd)
+        logger.info("--- Using CDK directory ---")
+        logger.info(str(cwd))
     env = None
     if bsm is not None:
-        print("--- Using boto session ---")
-        print_aws_identity(bsm)
+        logger.info("--- Using boto session ---")
+        log_aws_identity(bsm)
         env = get_aws_cli_env(bsm)
     return run_cmd(args, cwd=cwd, env=env)

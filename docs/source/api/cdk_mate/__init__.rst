@@ -12,6 +12,7 @@ sub packages and modules
 
     cli <cli/__init__>
     api <api>
+    logger <logger>
     stack_ctx <stack_ctx>
     utils <utils>
     

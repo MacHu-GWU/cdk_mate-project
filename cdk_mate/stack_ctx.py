@@ -25,6 +25,7 @@ from .cli.cli_cmd import Deploy
 from .cli.cli_cmd import Destroy
 from .utils import to_camel
 from .utils import to_slug
+from .logger import logger
 
 
 if T.TYPE_CHECKING:  # pragma: no cover
@@ -153,8 +154,8 @@ class StackCtx(BaseModel):
 
         :param dir_cdk: Optional directory path for CDK synthesis context
         """
-        print("--- Preview in AWS Console ---")
-        print(f"{self.stack_name}: {self.stack_console_url}")
+        logger.info("--- Preview in AWS Console ---")
+        logger.info(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Synth(
             **kwargs,
         )
@@ -172,8 +173,8 @@ class StackCtx(BaseModel):
 
         :param dir_cdk: Optional directory path for CDK diff context
         """
-        print("--- Preview in AWS Console ---")
-        print(f"{self.stack_name}: {self.stack_console_url}")
+        logger.info("--- Preview in AWS Console ---")
+        logger.info(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Diff(
             stacks=[self.construct_id],
             **kwargs,
@@ -194,8 +195,8 @@ class StackCtx(BaseModel):
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before deployment
         """
-        print("--- Preview in AWS Console ---")
-        print(f"{self.stack_name}: {self.stack_console_url}")
+        logger.info("--- Preview in AWS Console ---")
+        logger.info(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Deploy(
             stacks=[self.construct_id],
             require_approval=OPT if prompt else "never",
@@ -217,8 +218,8 @@ class StackCtx(BaseModel):
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before destruction
         """
-        print("--- Preview in AWS Console ---")
-        print(f"{self.stack_name}: {self.stack_console_url}")
+        logger.info("--- Preview in AWS Console ---")
+        logger.info(f"{self.stack_name}: {self.stack_console_url}")
         cmd = Destroy(
             stacks=[self.construct_id],
             force=OPT if prompt else True,
@@ -245,7 +246,7 @@ def _get_bsm_for_many(
     first = stack_ctx_list[0]
     targets = {(ctx.aws_account_id, ctx.aws_region) for ctx in stack_ctx_list}
     if len(targets) > 1:
-        print(
+        logger.warning(
             "Warning: these stacks target more than one AWS account or region, "
             f"and all of them run with the credentials of {first.stack_name!r}. "
             "This works only if the other accounts trust that account "
@@ -270,9 +271,9 @@ def cdk_diff_many(
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
     bsm = _get_bsm_for_many(stack_ctx_list)
-    print("--- Preview in AWS Console ---")
+    logger.info("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
-        print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
+        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
     cmd = Diff(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
         **kwargs,
@@ -298,9 +299,9 @@ def cdk_deploy_many(
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
     bsm = _get_bsm_for_many(stack_ctx_list)
-    print("--- Preview in AWS Console ---")
+    logger.info("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
-        print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
+        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
     cmd = Deploy(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
         require_approval=OPT if prompt else "never",
@@ -327,9 +328,9 @@ def cdk_destroy_many(
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
     bsm = _get_bsm_for_many(stack_ctx_list)
-    print("--- Preview in AWS Console ---")
+    logger.info("--- Preview in AWS Console ---")
     for stack_ctx in stack_ctx_list:
-        print(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
+        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
     cmd = Destroy(
         stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
         force=OPT if prompt else True,

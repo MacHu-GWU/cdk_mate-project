@@ -106,6 +106,18 @@ Every option defaults to "not set", and an option that is not set never reaches 
     The CDK CLI does not fail on an option it does not know: it prints ``Unknown option(s): ... These will be ignored.`` and carries on with exit code 0. When you set an option, make sure your CLI version supports it, for example by pinning the CLI version in your project.
 
 
+Output and Logging
+------------------------------------------------------------------------------
+Before running a command, cdk_mate reports what it is about to do: the AWS console URL of each stack, the masked AWS account, principal and region of ``bsm``, the CDK directory, and the command line. It reports through the standard :mod:`logging` module, under the logger name ``cdk_mate`` (see :mod:`cdk_mate.logger`), and by default writes plain messages to stdout. The output of the ``cdk`` command itself always goes straight to your terminal.
+
+.. code-block:: python
+
+    import logging
+
+    # keep only warnings; this also skips the sts:GetCallerIdentity call behind the identity report
+    logging.getLogger("cdk_mate").setLevel(logging.WARNING)
+
+
 Usage Examples
 ------------------------------------------------------------------------------
 
