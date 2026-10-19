@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from cdk_mate.stack_ctx import StackCtx
+from cdk_mate.stack_ctx import build_cmd
 from cdk_mate.stack_ctx import _get_bsm_for_many
 from cdk_mate.stack_ctx import cdk_diff_many
 from cdk_mate.stack_ctx import cdk_deploy_many
@@ -8,6 +9,11 @@ from cdk_mate.stack_ctx import cdk_destroy_many
 
 import pytest
 from func_args.api import ParamError
+
+from cdk_mate.cli.cli_cmd import Synth
+from cdk_mate.cli.cli_cmd import Diff
+from cdk_mate.cli.cli_cmd import Deploy
+from cdk_mate.cli.cli_cmd import Destroy
 
 from cdk_mate.tests.mock_aws import BaseMockAwsTest
 
@@ -39,6 +45,82 @@ def _make_ctx(name: str, account: str, bsm=None) -> StackCtx:
         aws_region="us-east-1",
         bsm=bsm,
     )
+
+
+class TestBuildCmd:
+    def test_synth(self):
+        cmd = build_cmd(Synth, [_make_ctx("a", "111111111111")])
+        assert isinstance(cmd, Synth)
+        # only this stack, like diff / deploy / destroy
+        assert cmd.to_args() == ["cdk", "synth", "a"]
+
+    def test_diff_many(self):
+        ctx_list = [
+            _make_ctx("a", "111111111111"),
+            _make_ctx("b", "111111111111"),
+        ]
+        assert build_cmd(Diff, ctx_list, fail=True).to_args() == [
+            "cdk",
+            "diff",
+            "a",
+            "b",
+            "--fail",
+        ]
+
+    def test_deploy(self):
+        ctx_list = [_make_ctx("a", "111111111111")]
+        assert build_cmd(Deploy, ctx_list).to_args() == [
+            "cdk",
+            "deploy",
+            "a",
+            "--require-approval",
+            "never",
+        ]
+        assert build_cmd(Deploy, ctx_list, prompt=True).to_args() == [
+            "cdk",
+            "deploy",
+            "a",
+        ]
+        # an explicit field wins over the prompt default
+        args = build_cmd(
+            Deploy,
+            ctx_list,
+            require_approval="broadening",
+            profile="my_profile",
+        ).to_args()
+        assert args == [
+            "cdk",
+            "deploy",
+            "a",
+            "--require-approval",
+            "broadening",
+            "--profile",
+            "my_profile",
+        ]
+
+    def test_destroy(self):
+        ctx_list = [_make_ctx("a", "111111111111")]
+        assert build_cmd(Destroy, ctx_list).to_args() == [
+            "cdk",
+            "destroy",
+            "a",
+            "--force",
+        ]
+        assert build_cmd(Destroy, ctx_list, prompt=True).to_args() == [
+            "cdk",
+            "destroy",
+            "a",
+        ]
+        assert build_cmd(Destroy, ctx_list, force=False).to_args() == [
+            "cdk",
+            "destroy",
+            "a",
+            "--no-force",
+        ]
+
+    def test_empty(self):
+        with pytest.raises(ValueError):
+            build_cmd(Deploy, [])
 
 
 class TestGetBsmForMany:

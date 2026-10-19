@@ -19,6 +19,7 @@ from func_args.api import REQ
 from func_args.api import OPT
 from func_args.api import BaseModel
 
+from .cli.cli_cmd import BaseCommand
 from .cli.cli_cmd import Synth
 from .cli.cli_cmd import Diff
 from .cli.cli_cmd import Deploy
@@ -154,12 +155,8 @@ class StackCtx(BaseModel):
 
         :param dir_cdk: Optional directory path for CDK synthesis context
         """
-        logger.info("--- Preview in AWS Console ---")
-        logger.info(f"{self.stack_name}: {self.stack_console_url}")
-        cmd = Synth(
-            **kwargs,
-        )
-        return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
+        cmd = build_cmd(Synth, [self], **kwargs)
+        return _run_cmd_for_many(cmd, [self], dir_cdk=dir_cdk)
 
     def cdk_diff(
         self,
@@ -173,13 +170,8 @@ class StackCtx(BaseModel):
 
         :param dir_cdk: Optional directory path for CDK diff context
         """
-        logger.info("--- Preview in AWS Console ---")
-        logger.info(f"{self.stack_name}: {self.stack_console_url}")
-        cmd = Diff(
-            stacks=[self.construct_id],
-            **kwargs,
-        )
-        return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
+        cmd = build_cmd(Diff, [self], **kwargs)
+        return _run_cmd_for_many(cmd, [self], dir_cdk=dir_cdk)
 
     def cdk_deploy(
         self,
@@ -195,14 +187,8 @@ class StackCtx(BaseModel):
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before deployment
         """
-        logger.info("--- Preview in AWS Console ---")
-        logger.info(f"{self.stack_name}: {self.stack_console_url}")
-        cmd = Deploy(
-            stacks=[self.construct_id],
-            require_approval=OPT if prompt else "never",
-            **kwargs,
-        )
-        return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
+        cmd = build_cmd(Deploy, [self], prompt=prompt, **kwargs)
+        return _run_cmd_for_many(cmd, [self], dir_cdk=dir_cdk)
 
     def cdk_destroy(
         self,
@@ -218,14 +204,56 @@ class StackCtx(BaseModel):
         :param dir_cdk: Optional directory path for CDK deployment context
         :param prompt: Whether to prompt for approval before destruction
         """
-        logger.info("--- Preview in AWS Console ---")
-        logger.info(f"{self.stack_name}: {self.stack_console_url}")
-        cmd = Destroy(
-            stacks=[self.construct_id],
-            force=OPT if prompt else True,
-            **kwargs,
-        )
-        return cmd.run(bsm=self.bsm, dir_cdk=dir_cdk)
+        cmd = build_cmd(Destroy, [self], prompt=prompt, **kwargs)
+        return _run_cmd_for_many(cmd, [self], dir_cdk=dir_cdk)
+
+
+T_CMD = T.TypeVar("T_CMD", bound=BaseCommand)
+
+
+def build_cmd(
+    cmd_class: type[T_CMD],
+    stack_ctx_list: list[StackCtx],
+    prompt: bool = False,
+    **kwargs: T_KWARGS,
+) -> T_CMD:
+    """
+    Build the CDK command that targets the given stacks, without running it.
+
+    Every ``cdk_*`` method of :class:`StackCtx` and every ``cdk_*_many``
+    function builds its command here, then runs it. Call it yourself to
+    inspect the command line (``build_cmd(...).to_args()``), or to adjust the
+    command before ``.run()``.
+
+    ``stacks`` is set to the construct ids of ``stack_ctx_list``, in order.
+    ``prompt`` matters only for :class:`~cdk_mate.cli.cli_cmd.Deploy` and
+    :class:`~cdk_mate.cli.cli_cmd.Destroy`: ``False`` (the default) passes
+    ``--require-approval never`` or ``--force``, so nothing waits for a human;
+    ``True`` passes neither, leaving the CLI to ask. Any field in ``kwargs``
+    wins over these defaults, such as ``require_approval="broadening"``.
+
+    Example::
+
+        build_cmd(Deploy, [stack_ctx]).to_args()
+        # ["cdk", "deploy", "MyStack", "--require-approval", "never"]
+
+    :param cmd_class: A command class with a ``stacks`` field, such as
+        :class:`~cdk_mate.cli.cli_cmd.Deploy`
+    :param stack_ctx_list: The stacks the command targets
+    :param prompt: Whether a deploy or destroy should ask for approval
+    :param kwargs: Any other field of ``cmd_class``
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
+    """
+    if len(stack_ctx_list) == 0:
+        raise ValueError("stack_ctx_list is empty, there is no stack to run")
+    params = {"stacks": [stack_ctx.construct_id for stack_ctx in stack_ctx_list]}
+    if issubclass(cmd_class, Deploy):
+        params["require_approval"] = OPT if prompt else "never"
+    elif issubclass(cmd_class, Destroy):
+        params["force"] = OPT if prompt else True
+    params.update(kwargs)
+    return cmd_class(**params)
 
 
 def _get_bsm_for_many(
@@ -255,6 +283,22 @@ def _get_bsm_for_many(
     return first.bsm
 
 
+def _run_cmd_for_many(
+    cmd: BaseCommand,
+    stack_ctx_list: list[StackCtx],
+    dir_cdk: T_PATH_ARG | None = None,
+):  # pragma: no cover
+    """
+    Print the console URL of each stack, then run ``cmd`` with the
+    credentials of the first stack.
+    """
+    bsm = _get_bsm_for_many(stack_ctx_list)
+    logger.info("--- Preview in AWS Console ---")
+    for stack_ctx in stack_ctx_list:
+        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
+    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
+
+
 def cdk_diff_many(
     stack_ctx_list: list[StackCtx],
     dir_cdk: T_PATH_ARG | None = None,
@@ -270,15 +314,8 @@ def cdk_diff_many(
 
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
-    bsm = _get_bsm_for_many(stack_ctx_list)
-    logger.info("--- Preview in AWS Console ---")
-    for stack_ctx in stack_ctx_list:
-        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
-    cmd = Diff(
-        stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
-        **kwargs,
-    )
-    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
+    cmd = build_cmd(Diff, stack_ctx_list, **kwargs)
+    return _run_cmd_for_many(cmd, stack_ctx_list, dir_cdk=dir_cdk)
 
 
 def cdk_deploy_many(
@@ -298,16 +335,8 @@ def cdk_deploy_many(
 
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
-    bsm = _get_bsm_for_many(stack_ctx_list)
-    logger.info("--- Preview in AWS Console ---")
-    for stack_ctx in stack_ctx_list:
-        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
-    cmd = Deploy(
-        stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
-        require_approval=OPT if prompt else "never",
-        **kwargs,
-    )
-    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
+    cmd = build_cmd(Deploy, stack_ctx_list, prompt=prompt, **kwargs)
+    return _run_cmd_for_many(cmd, stack_ctx_list, dir_cdk=dir_cdk)
 
 
 def cdk_destroy_many(
@@ -327,13 +356,5 @@ def cdk_destroy_many(
 
     :raises ValueError: If ``stack_ctx_list`` is empty
     """
-    bsm = _get_bsm_for_many(stack_ctx_list)
-    logger.info("--- Preview in AWS Console ---")
-    for stack_ctx in stack_ctx_list:
-        logger.info(f"{stack_ctx.stack_name}: {stack_ctx.stack_console_url}")
-    cmd = Destroy(
-        stacks=[stack_ctx.construct_id for stack_ctx in stack_ctx_list],
-        force=OPT if prompt else True,
-        **kwargs,
-    )
-    return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
+    cmd = build_cmd(Destroy, stack_ctx_list, prompt=prompt, **kwargs)
+    return _run_cmd_for_many(cmd, stack_ctx_list, dir_cdk=dir_cdk)
