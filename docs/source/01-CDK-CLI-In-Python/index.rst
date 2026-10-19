@@ -91,6 +91,8 @@ Every option defaults to "not set", and an option that is not set never reaches 
 - **Options this library does not define yet:** pass them verbatim with ``extra_args``; they go at the end of the command line.
 - **A specific CLI version:** set ``cdk_cmd``, the executable that runs the subcommand (``["cdk"]`` by default).
 
+:ref:`build-cdk-commands` shows each of these rules with the real command line it builds.
+
 .. code-block:: python
 
     import cdk_mate.api as cdk_mate
@@ -130,7 +132,7 @@ Prepare an AWS environment for CDK deployments:
 .. code-block:: python
 
     from boto_session_manager.api import BotoSesManager
-    import cdk_mate.cli as cdk_mate
+    import cdk_mate.api as cdk_mate
 
     bsm = BotoSesManager(
         profile_name="dev",
@@ -138,7 +140,7 @@ Prepare an AWS environment for CDK deployments:
     )
 
     cdk_mate.cli.Bootstrap(
-        aws_environment="123456789012/us-east-1",
+        aws_environment=["aws://123456789012/us-east-1"],
         bootstrap_bucket_name="my-cdk-bootstrap-bucket",
         qualifier="hnb659fds"  # Custom qualifier
     ).run(bsm=bsm)
@@ -161,7 +163,7 @@ Compare local CDK stacks with deployed versions:
 
 .. code-block:: python
 
-    import cdk_mate.cli as cdk_mate
+    import cdk_mate.api as cdk_mate
 
     # Basic diff
     cdk_mate.cli.Diff(
@@ -173,7 +175,7 @@ Compare local CDK stacks with deployed versions:
         stacks=["MyStack"],
         quiet=True,
         security_only=True,
-        change_set=False  # Faster but less accurate diff
+        method="template",  # compare with the deployed template, without a change set
     ).run(dir_cdk="/path/to/cdk/project")
 
 
@@ -206,7 +208,13 @@ Remove multiple stacks with forced deletion:
 
 .. code-block:: python
 
+    from boto_session_manager.api import BotoSesManager
     import cdk_mate.api as cdk_mate
+
+    bsm = BotoSesManager(
+        profile_name="dev",
+        region_name="us-east-1"
+    )
 
     cdk_mate.cli.Destroy(
         stacks=["Stack1", "Stack2"],

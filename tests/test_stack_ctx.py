@@ -3,6 +3,7 @@
 from cdk_mate.stack_ctx import StackCtx
 from cdk_mate.stack_ctx import build_cmd
 from cdk_mate.stack_ctx import _get_bsm_for_many
+from cdk_mate.stack_ctx import cdk_synth_many
 from cdk_mate.stack_ctx import cdk_diff_many
 from cdk_mate.stack_ctx import cdk_deploy_many
 from cdk_mate.stack_ctx import cdk_destroy_many
@@ -53,6 +54,19 @@ class TestBuildCmd:
         assert isinstance(cmd, Synth)
         # only this stack, like diff / deploy / destroy
         assert cmd.to_args() == ["cdk", "synth", "a"]
+
+    def test_synth_many(self):
+        ctx_list = [
+            _make_ctx("a", "111111111111"),
+            _make_ctx("b", "111111111111"),
+        ]
+        assert build_cmd(Synth, ctx_list, quiet=True).to_args() == [
+            "cdk",
+            "synth",
+            "a",
+            "b",
+            "--quiet",
+        ]
 
     def test_diff_many(self):
         ctx_list = [
@@ -128,7 +142,7 @@ class TestGetBsmForMany:
         with pytest.raises(ValueError):
             _get_bsm_for_many([])
         # the *_many functions fail before running anything
-        for func in [cdk_diff_many, cdk_deploy_many, cdk_destroy_many]:
+        for func in [cdk_synth_many, cdk_diff_many, cdk_deploy_many, cdk_destroy_many]:
             with pytest.raises(ValueError):
                 func([])
 

@@ -299,6 +299,29 @@ def _run_cmd_for_many(
     return cmd.run(bsm=bsm, dir_cdk=dir_cdk)
 
 
+def cdk_synth_many(
+    stack_ctx_list: list[StackCtx],
+    dir_cdk: T_PATH_ARG | None = None,
+    **kwargs: T_KWARGS,
+):  # pragma: no cover
+    """
+    Synthesize multiple stacks in a single operation.
+
+    The CDK CLI runs the whole app either way; naming the stacks selects
+    which templates (and dependencies) it reports. To synthesize every stack
+    of the app, run ``cdk_mate.api.cli.Synth().run(dir_cdk=...)`` instead.
+
+    - `Usage Example <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`__
+
+    :param stack_ctx_list: List of stack contexts to synthesize
+    :param dir_cdk: Optional directory path for CDK synthesis context
+
+    :raises ValueError: If ``stack_ctx_list`` is empty
+    """
+    cmd = build_cmd(Synth, stack_ctx_list, **kwargs)
+    return _run_cmd_for_many(cmd, stack_ctx_list, dir_cdk=dir_cdk)
+
+
 def cdk_diff_many(
     stack_ctx_list: list[StackCtx],
     dir_cdk: T_PATH_ARG | None = None,

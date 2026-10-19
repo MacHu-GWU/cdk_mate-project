@@ -28,6 +28,7 @@ def test():
     _ = api.StackCtx.cdk_deploy
     _ = api.StackCtx.cdk_destroy
     _ = api.build_cmd
+    _ = api.cdk_synth_many
     _ = api.cdk_diff_many
     _ = api.cdk_deploy_many
     _ = api.cdk_destroy_many

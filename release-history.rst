@@ -31,6 +31,8 @@ x.y.z (Backlog)
 - Add the ``extra_args`` field to every command class: arguments appended verbatim at the end of the command line, for options this library does not define yet, such as ``["--tags", "team=data"]``.
 - Add the global options ``region`` and ``unstable`` to every command class. ``unstable`` used to exist on ``GC`` only; ``GC(unstable=["gc"])`` keeps working.
 - Add the ``stacks`` positional argument to ``Synth``, to synthesize selected stacks.
+- Add ``cdk_mate.api.build_cmd``: build the CDK command that targets a list of stack contexts, without running it, so ``build_cmd(Deploy, [stack_ctx]).to_args()`` shows the command line first. Every ``StackCtx.cdk_*()`` method and ``cdk_*_many()`` function builds its command with it.
+- Add ``cdk_mate.api.cdk_synth_many``, so synth, like diff, deploy and destroy, has a form for one stack and a form for a list of stacks.
 - Cover every command of the CDK CLI except ``cdk docs`` and ``cdk lsp``. Add the following public APIs:
     - ``cdk_mate.api.cli.CliTelemetry``
     - ``cdk_mate.api.cli.Diagnose``
@@ -74,6 +76,8 @@ x.y.z (Backlog)
 - A boolean option set to ``False`` now passes ``--no-<option>``, so options that are on by default can be turned off, such as ``Deploy(rollback=False)`` for ``--no-rollback`` and ``GC(confirm=False)`` for ``--no-confirm``. ``False`` used to pass nothing, which left the CLI default on.
 - A value option or positional argument set to ``0`` is now passed: ``GC(created_buffer_days=0)`` passes ``--created-buffer-days 0`` and ``Deploy(concurrency=0)`` passes ``--concurrency 0``. ``0`` used to pass nothing, so a CLI default could not be overridden with zero. ``None`` and ``""`` still pass nothing, and an empty string or ``None`` item of a positional list is skipped.
 - A field with a trailing underscore, used to avoid a Python keyword, now passes the option name without it: ``Init(list_=True)`` passes ``--list`` instead of ``--list-``.
+- ``StackCtx.cdk_synth()`` now passes the construct id of its stack (``cdk synth <id>``), like ``cdk_diff()``, ``cdk_deploy()`` and ``cdk_destroy()``. It used to pass no stack, so the CLI printed no template for an app with more than one stack. To synthesize every stack, run ``cdk_mate.api.cli.Synth().run(dir_cdk=...)``.
+- ``StackCtx.cdk_deploy()``, ``StackCtx.cdk_destroy()``, ``cdk_deploy_many()`` and ``cdk_destroy_many()`` accept ``require_approval`` and ``force`` in ``kwargs``, and the value you pass wins over the ``prompt`` default, such as ``cdk_deploy(require_approval="broadening")``. Passing them used to raise ``TypeError`` (multiple values for keyword argument).
 - Fix the reference link in the ``Destroy`` docstring, and the wrong ``to_slug()`` docstring example.
 
 **Miscellaneous**
@@ -84,6 +88,7 @@ x.y.z (Backlog)
 - Move the project tooling from Poetry to uv, mise and setuptools, following the pywf open-source template; CI and Read the Docs build with uv.
 - The unit tests run without any AWS account: they synthesize the example stacks under a moto mock, locally and in CI alike. They need ``node``, which aws-cdk-lib runs on; CI and Read the Docs now install it.
 - Document how options reach the CLI: unset options, ``False``, ``extra_args``, ``cdk_cmd``, and the CDK CLI ignoring unknown options.
+- Add the docs page "Build CDK Commands", a notebook that builds command lines with the command classes, ``StackCtx`` and ``build_cmd``, and shows each real output; it needs no AWS account. Fix the broken imports and options in the examples of "CDK CLI in Python", the files that no longer exist in "Multi Stack Multi Environment Best Practices", and the API paths in "Public APIs".
 
 
 0.1.6 (2025-05-06)

@@ -45,7 +45,7 @@ Directory Structure
     ├── cdk_mate/                      # Core library
     │   ├── stack_ctx.py               # Stack context implementation
     │   └── tests/                     # Example implementations
-    │       ├── stacks.py              # CDK stack definition
+    │       ├── stacks/                # CDK stack definitions
     │       │   ├── stack1/                             # Stack1-specific definition
     │       │   │   ├── iac_define.py                   # Stack1 entry point
     │       │   │   └── iac_define_01_everything.py     # Stack1 mixin class
@@ -56,7 +56,7 @@ Directory Structure
     │       ├── stack_ctx_enum.py      # Stack context enumerations
     │       └── stack_enum.py          # CDK stack initialization
     └── tests/                         # Unit tests
-        └── test_stack_enum.py         # Tests for stack initialization
+        └── test_stack_ctx.py          # Synthesizes every stack offline
 
 
 Core Components
@@ -121,7 +121,7 @@ The stack initialization module creates CDK stack instances using the context ob
 
 Deployment Options
 ------------------------------------------------------------------------------
-This pattern supports three flexible deployment approaches:
+This pattern supports two deployment approaches:
 
 
 1. Single Stack, Multiple Environments
@@ -262,7 +262,7 @@ Follow these steps to implement and deploy a new CloudFormation stack:
     - Open `stack_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_enum.py>`_
     - Add your new stack instances to the enum
 4. Test your stack:
-    - Update `test_stack_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_enum.py>`_
+    - Update ``TestStackCtxSynth`` in `test_stack_ctx.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_ctx.py>`_
     - Add and run tests for your new stack to verify it synthesizes correctly
 5. Set up deployment scripts:
     - Option 1: Create a dedicated subfolder in the `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_ directory for your stack
@@ -274,7 +274,7 @@ Updating an Existing CloudFormation Stack
 To update an existing stack, follow these key steps:
 
 1. Modify the stack implementation in its respective folder under ``stacks``
-2. Verify your changes with the unit tests in ``test_stack_enum.py``
+2. Verify your changes with ``TestStackCtxSynth`` in ``tests/test_stack_ctx.py``
 3. Update the deployment scripts in the ``cdk`` folder as needed
 
 This process allows you to make incremental changes while maintaining the overall deployment structure.

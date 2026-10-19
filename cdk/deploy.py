@@ -28,6 +28,8 @@ delete_test_stack_ctx_list = [
 
 # --- 📦 cdk synth
 cdk_mate.cli.Synth().run(dir_cdk=__file__)
+# cdk_mate.cdk_synth_many(create_dev_stack_ctx_list, dir_cdk=__file__)
+# cdk_mate.cdk_synth_many(create_test_stack_ctx_list, dir_cdk=__file__)
 
 # --- 🔍 cdk diff
 # cdk_mate.cdk_diff_many(create_dev_stack_ctx_list, dir_cdk=__file__)
