@@ -184,8 +184,10 @@ class TestStackCtxSynth(BaseMockAwsTest):
         assert stack_ctx.aws_region == "us-east-1"
 
     def test_synth(self):
-        from cdk_mate.tests.stack_enum import stack_enum
+        import aws_cdk as cdk
+        from cdk_mate.tests.stack_enum import StackEnum
 
+        stack_enum = StackEnum(app=cdk.App())
         _ = stack_enum.stack1_dev
         _ = stack_enum.stack1_test
         _ = stack_enum.stack2_dev
@@ -199,11 +201,54 @@ class TestStackCtxSynth(BaseMockAwsTest):
             "cdk-mate-stack2-dev",
             "cdk-mate-stack2-test",
         }
-        for stack in cloud_assembly.stacks:
-            resources = stack.template["Resources"].values()
-            parameters = [r for r in resources if r["Type"] == "AWS::SSM::Parameter"]
-            assert len(parameters) == 1
-            assert parameters[0]["Properties"]["Name"] == f"/{stack.stack_name}/example"
+
+        # per-environment argument: the log level of stack1 differs by environment
+        for stack_name, log_level in [
+            ("cdk-mate-stack1-dev", "DEBUG"),
+            ("cdk-mate-stack1-test", "INFO"),
+        ]:
+            template = cloud_assembly.get_stack_by_name(stack_name).template
+            types = [r["Type"] for r in template["Resources"].values()]
+            assert sorted(types) == ["AWS::SNS::Topic", "AWS::SSM::Parameter"]
+            parameter = _find_resource(template, "AWS::SSM::Parameter")
+            assert parameter["Properties"]["Name"] == f"/{stack_name}/log-level"
+            assert parameter["Properties"]["Value"] == log_level
+
+        # dependency: stack2 imports the alert topic of stack1 in its own environment
+        for env_name in ["dev", "test"]:
+            stack1 = cloud_assembly.get_stack_by_name(f"cdk-mate-stack1-{env_name}")
+            stack2 = cloud_assembly.get_stack_by_name(f"cdk-mate-stack2-{env_name}")
+            # stack2 also depends on its own asset manifest, so check membership
+            assert stack1.id in [dep.id for dep in stack2.dependencies]
+            parameter = _find_resource(stack2.template, "AWS::SSM::Parameter")
+            assert "Fn::ImportValue" in parameter["Properties"]["Value"]
+            policy = _find_resource(stack2.template, "AWS::IAM::Policy")
+            statement = policy["Properties"]["PolicyDocument"]["Statement"][0]
+            assert statement["Action"] == "sns:Publish"
+            assert "Fn::ImportValue" in statement["Resource"]
+
+    def test_dependency_is_created_on_demand(self):
+        import aws_cdk as cdk
+        from cdk_mate.tests.stack_enum import StackEnum
+
+        stack_enum = StackEnum(app=cdk.App())
+        _ = stack_enum.stack2_dev  # creates stack1_dev, which it depends on
+        _ = stack_enum.stack2_dev  # cached: no second instance
+
+        cloud_assembly = stack_enum.app.synth()
+        stack_names = {stack.stack_name for stack in cloud_assembly.stacks}
+        assert stack_names == {
+            "cdk-mate-stack1-dev",
+            "cdk-mate-stack2-dev",
+        }
+
+
+def _find_resource(template: dict, resource_type: str) -> dict:
+    resources = [
+        r for r in template["Resources"].values() if r["Type"] == resource_type
+    ]
+    assert len(resources) == 1, resource_type
+    return resources[0]
 
 
 if __name__ == "__main__":

@@ -1,23 +1,18 @@
 # -*- coding: utf-8 -*-
 
 """
-Infrastructure as Code (IaC) Module for OpenSearch Migration Project
+Stack1: the alerts stack.
 
-This module provides a structured approach to defining and deploying infrastructure
-for the OpenSearch Migration Proof of Concept (POC) using
-`AWS Cloud Development Kit (CDK) <https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html>`_.
+It owns an SNS topic that other stacks publish alerts to, and a log level that
+differs per environment. Every resource is free: an SNS topic with no traffic
+and a standard SSM parameter.
 
-Design Philosophy:
+The stack definition follows the mixin pattern:
 
-- Separation of Concerns: The infrastructure definition is cleanly separated from
-  its concrete instantiation.
-- Modularity: Each infrastructure component is defined in its own mixin class,
-  promoting code reusability and maintainability.
-
-Key Components:
-
-- iac_define.py: Contains the core stack definition with modular mixins for
-  different AWS resources (SQS, IAM, S3, Lambda)
-- Individual mixin files (e.g., ``iam_define_01_abc.py``, ``iam_define_01_xyz.py``):
-  Implement specific infrastructure resource configurations
+- ``iac_define.py``: the :class:`~cdk_mate.tests.stacks.stack1.iac_define.Stack1`
+  class. Its ``__init__`` takes the standard arguments from
+  :meth:`cdk_mate.stack_ctx.StackCtx.to_stack_kwargs` plus its own, explicit
+  arguments, then calls one ``create_*`` method per mixin.
+- ``iac_define_01_alerts.py``, ``iac_define_02_config.py``: one mixin per group
+  of resources, so a large stack stays split into small files.
 """

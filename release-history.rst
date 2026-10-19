@@ -84,11 +84,12 @@ x.y.z (Backlog)
 
 - ``cdk_mate/cli/cli_cmd.py`` is now generated from ``lib/cli/cli-type-registry.json`` of the ``aws-cdk`` npm package by ``mise run gen-cli-cmd``; after a CLI upgrade, the diff of the regenerated file shows which options changed. The behavior shared by all commands moves to ``cdk_mate/cli/cli_cmd_base.py``. A test keeps every option field name of 0.1.6.
 - CI adds a job that installs every direct dependency at its declared floor (``uv sync --resolution lowest-direct``) on Python 3.11 and 3.14, so the floors in ``pyproject.toml`` stay tested versions.
-- The example stacks behind ``cdk/`` and the tests each create a free SSM parameter, ``/<stack name>/example``, instead of being empty.
+- Rework the example project behind ``cdk/`` and the tests to show why it has two layers, ``stack_ctx_enum.py`` and ``stack_enum.py``. Stack1 creates an SNS topic and an SSM parameter whose value differs per environment, passed as an explicit argument; Stack2 creates an IAM role allowed to publish to the topic of Stack1, which it receives as an argument, so it depends on Stack1. Every resource is free. Both modules explain the pattern in their docstrings.
+- ``cdk_mate.tests.stack_enum`` no longer creates a ``cdk.App`` at import time: create ``StackEnum(app=cdk.App())`` in each app script, so every app and every test starts fresh.
 - Move the project tooling from Poetry to uv, mise and setuptools, following the pywf open-source template; CI and Read the Docs build with uv.
 - The unit tests run without any AWS account: they synthesize the example stacks under a moto mock, locally and in CI alike. They need ``node``, which aws-cdk-lib runs on; CI and Read the Docs now install it.
 - Document how options reach the CLI: unset options, ``False``, ``extra_args``, ``cdk_cmd``, and the CDK CLI ignoring unknown options.
-- Add the docs page "Build CDK Commands", a notebook that builds command lines with the command classes, ``StackCtx`` and ``build_cmd``, and shows each real output; it needs no AWS account. Fix the broken imports and options in the examples of "CDK CLI in Python", the files that no longer exist in "Multi Stack Multi Environment Best Practices", and the API paths in "Public APIs".
+- Add the docs page "Build CDK Commands", a notebook that builds command lines with the command classes, ``StackCtx`` and ``build_cmd``, and shows each real output; it needs no AWS account. Fix the broken imports and options in the examples of "CDK CLI in Python", the files that no longer exist in "Multi Stack Multi Environment Best Practices", and the API paths in "Public APIs". Rewrite "Multi Stack Multi Environment Best Practices" around the two layers and why they pay off.
 
 
 0.1.6 (2025-05-06)

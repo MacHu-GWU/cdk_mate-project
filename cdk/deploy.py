@@ -4,7 +4,8 @@ import cdk_mate.api as cdk_mate
 from cdk_mate.tests.stack_ctx_enum import stack_ctx_enum
 
 # --- 🗂️ group stacks by aws account / environment
-# --- 🟢 creation order
+# --- 🟢 creation order: Stack1 first, since Stack2 uses its alert topic
+# (the CDK CLI orders them by their dependencies anyway; the list order documents it)
 create_dev_stack_ctx_list = [
     stack_ctx_enum.stack1_dev,
     stack_ctx_enum.stack2_dev,
@@ -15,15 +16,16 @@ create_test_stack_ctx_list = [
     stack_ctx_enum.stack2_test,
 ]
 
-# --- 🔴 deletion order
+# --- 🔴 deletion order: Stack2 imports the alert topic of Stack1, so it goes first
+# (the CDK CLI orders them by their dependencies anyway; the list order documents it)
 delete_dev_stack_ctx_list = [
-    stack_ctx_enum.stack1_dev,
     stack_ctx_enum.stack2_dev,
+    stack_ctx_enum.stack1_dev,
 ]
 
 delete_test_stack_ctx_list = [
-    stack_ctx_enum.stack1_test,
     stack_ctx_enum.stack2_test,
+    stack_ctx_enum.stack1_test,
 ]
 
 # --- 📦 cdk synth

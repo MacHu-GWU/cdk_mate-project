@@ -2,6 +2,8 @@ Manage many stacks in one place
 ==============================================================================
 This folder is a real deployment playground for ``cdk_mate``. It uses the example stacks in ``cdk_mate/tests/stacks/`` and the environments in ``cdk_mate/tests/bsm_enum.py``, and it deploys to **real AWS accounts**.
 
+Each environment gets Stack1 (an SNS topic and an SSM parameter) and Stack2 (an IAM role allowed to publish to that topic, and an SSM parameter), so the four stacks cost nothing. Stack2 depends on Stack1 of the same environment; the CDK CLI deploys Stack1 first and destroys it last.
+
 How ``cdk_mate`` is tested
 ------------------------------------------------------------------------------
 - **Unit tests** (``tests/``, ``mise run cov``, and CI): no AWS account needed. ``cdk_mate.tests.mock_aws.BaseMockAwsTest`` starts a moto mock and switches ``bsm_enum`` to mock sessions, so ``StackCtx.new(...)`` and ``cdk.App().synth()`` run offline. They need ``node`` on ``PATH``, because aws-cdk-lib runs through jsii.

@@ -2,93 +2,90 @@
 
 Multi Stack Multi Environment Best Practices
 ==============================================================================
+A real CDK project has several stacks, each deployed to several environments (dev, test, prod, often in different AWS accounts). This page shows a project layout for that, and why it is split the way it is. Every file it shows is real: the example project lives in `cdk_mate/tests <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests>`_ and its deploy scripts in `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_, and it is deployed to two real AWS accounts.
 
 
-Overview
+The Example Project
 ------------------------------------------------------------------------------
-The Multi-Stack, Multi-Environment CDK Deployment Pattern provides a scalable and flexible approach to managing many AWS CDK stacks across multiple environments (accounts, regions, stages). This pattern addresses several common challenges in enterprise-level infrastructure as code:
+Two stacks, two environments, so four CloudFormation stacks. Every resource is free.
 
-- **Complexity Management**: Separate stack implementation from deployment configuration
-- **Deployment Flexibility**: Deploy individual stacks, groups of stacks, or all stacks as needed
-- **Environment Consistency**: Ensure consistent stack configurations across environments
-- **Resource Isolation**: Keep resource definitions clean and focused
-- **Credential Management**: Safely handle AWS credentials for different environments
-- **Testing Granularity**: Test infrastructure at various levels of integration
+- **Stack1, the alerts stack:** an SNS topic that other stacks publish alerts to, and an SSM parameter holding the log level of its environment: ``DEBUG`` in dev, ``INFO`` in test.
+- **Stack2, the publisher stack:** an IAM role allowed to publish to the alert topic of Stack1, and an SSM parameter holding that topic's ARN. So Stack2 depends on Stack1 in the same environment.
 
-This pattern scales effectively by:
+These two needs, an argument that differs per environment and a reference from one stack to another, are what every real project has, and they shape the layout below.
 
-1. Using lightweight context objects to reference stack configurations without loading full CDK code
-2. Implementing lazy loading for AWS session credentials
-3. Separating stack definition from stack instantiation
-4. Providing reusable deployment utilities at both individual and group levels
-5. Centralizing environment configuration for consistency
-
-
-Code Architecture
-------------------------------------------------------------------------------
-
-
-Directory Structure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code-block::
 
-    project/
-    ├── cdk/                           # Deployment scripts
-    │   ├── app.py                     # Main CDK app entrypoint
-    │   ├── deploy.py                  # Multi-stack deployment script
-    │   ├── stack1/                    # Stack1-specific deployment
-    │   │   ├── stack1_app.py          # Stack1 app entry point
-    │   │   └── stack1_deploy.py       # Stack1 deployment script
-    │   └── stack2/                    # Stack2-specific deployment
-    │       ├── stack2_app.py          # Stack2 app entry point
-    │       └── stack2_deploy.py       # Stack2 deployment script
-    ├── cdk_mate/                      # Core library
-    │   ├── stack_ctx.py               # Stack context implementation
-    │   └── tests/                     # Example implementations
-    │       ├── stacks/                # CDK stack definitions
-    │       │   ├── stack1/                             # Stack1-specific definition
-    │       │   │   ├── iac_define.py                   # Stack1 entry point
-    │       │   │   └── iac_define_01_everything.py     # Stack1 mixin class
-    │       │   └── stack2/                             # Stack2-specific definition
-    │       │       ├── iac_define.py                   # Stack2 entry point
-    │       │       └── iac_define_01_everything.py     # Stack2 mixin class
-    │       ├── bsm_enum.py            # AWS session enumerations
-    │       ├── stack_ctx_enum.py      # Stack context enumerations
-    │       └── stack_enum.py          # CDK stack initialization
-    └── tests/                         # Unit tests
-        └── test_stack_ctx.py          # Synthesizes every stack offline
+    cdk_mate/tests/
+    ├── bsm_enum.py                 # one boto session per environment (AWS account and region)
+    ├── stack_ctx_enum.py           # layer 1: one StackCtx per (stack, environment)
+    ├── stack_enum.py               # layer 2: one CDK stack per (stack, environment)
+    └── stacks/                     # the stack definitions
+        ├── stack1/
+        │   ├── iac_define.py               # class Stack1, its __init__ and arguments
+        │   ├── iac_define_01_alerts.py     # mixin: the SNS topic
+        │   └── iac_define_02_config.py     # mixin: the SSM parameter
+        └── stack2/
+            ├── iac_define.py               # class Stack2, takes alert_topic
+            ├── iac_define_01_publisher.py  # mixin: the IAM role
+            └── iac_define_02_config.py     # mixin: the SSM parameter
+    cdk/
+    ├── cdk.json, app.py, deploy.py         # all stacks, one environment at a time
+    ├── stack1/                             # Stack1 only
+    │   └── cdk.json, stack1_app.py, stack1_deploy.py
+    └── stack2/                             # Stack2 only (and Stack1, its dependency)
+        └── cdk.json, stack2_app.py, stack2_deploy.py
 
 
-Core Components
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. **Stack Implementation**: Each stack is implemented in a dedicated module using a mixin pattern to manage complexity
-2. **BSM Enum**: Defines AWS session configurations for different environments
-3. **Stack Context Enum**: Defines metadata for each stack instance (stack name, AWS account, region)
-4. **IAC Initialization**: Creates CDK stack instances using context objects
-5. **Deployment Scripts**: Provides flexible deployment options
-
-
-Implementation Details
+Two Layers: Stack Contexts and Stacks
 ------------------------------------------------------------------------------
-Reference:
+The project keeps two enums, each with one entry per (stack, environment) pair, under the same name, such as ``stack2_dev``:
 
-- Stack definition source code: `cdk_mate/tests <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests>`_
+.. list-table::
+    :header-rows: 1
+
+    * - Layer
+      - Each entry is
+      - Used by
+    * - ``stack_ctx_enum.py``
+      - a :class:`~cdk_mate.stack_ctx.StackCtx`: plain data, the construct id, stack name, AWS account, region, and the boto session that deploys it
+      - the deploy scripts: synth, diff, deploy, destroy
+    * - ``stack_enum.py``
+      - the CDK stack itself, created in a given ``cdk.App`` from the matching stack context
+      - the CDK app scripts that ``cdk.json`` runs
+
+Four stacks take eight entries. That is the price of the split; here is what it buys.
+
+**The deploy scripts need only stack contexts.** ``cdk diff``, ``cdk deploy`` and ``cdk destroy`` need to know which stacks to target and with which credentials, not the stack objects. The deploy scripts import ``stack_ctx_enum`` alone and never load a stack definition, so they stay fast and simple however large the stacks grow. The CDK CLI loads the stacks itself, in its own process, by running the app script.
+
+**Each stack's arguments are written out by name.** A stack's ``__init__`` takes the standard arguments from :meth:`StackCtx.to_stack_kwargs <cdk_mate.stack_ctx.StackCtx.to_stack_kwargs>` (``id``, ``stack_name``, ``env``) plus its own. In ``stack_enum.py`` each entry is its own method, so its own arguments are passed explicitly:
+
+.. literalinclude:: ../../../cdk_mate/tests/stack_enum.py
+   :language: python
+   :pyobject: StackEnum.stack1_dev
+
+A generic "create the stack of this context" helper would have to forward such arguments through ``**kwargs``, which hides the signature from the reader and the IDE. With one method per entry, adding an argument to ``Stack1`` makes every method that does not pass it fail at synth.
+
+**Dependencies between stacks are plain attribute access.** ``Stack2`` takes the alert topic of ``Stack1`` as an explicit argument:
+
+.. literalinclude:: ../../../cdk_mate/tests/stack_enum.py
+   :language: python
+   :pyobject: StackEnum.stack2_dev
+
+CDK turns this reference into a CloudFormation export in Stack1 and an import in Stack2, and records that Stack2 depends on Stack1.
+
+**Every entry is created once, on first use.** Both enums use ``cached_property``. Using ``stack2_dev`` creates ``stack1_dev`` too, and only once, however many stacks depend on it; creating the same construct id twice in one ``cdk.App`` is an error. An app script creates just the stacks it names, plus their dependencies. A stack context is also built on first use, so no AWS call is made (:meth:`StackCtx.new <cdk_mate.stack_ctx.StackCtx.new>` reads the account id of the boto session) until an entry is needed.
+
+**The app is passed in.** ``StackEnum(app=cdk.App())`` takes the app as an argument instead of creating one at import time, so every app script and every test starts from a fresh app.
 
 
-Stack Context
+The Files
+------------------------------------------------------------------------------
+
+
+Environments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :class:`~cdk_mate.stack_ctx.StackCtx` class provides essential metadata for each stack instance.
-
-.. dropdown:: stack_ctx.py
-
-    .. literalinclude:: ../../../cdk_mate/stack_ctx.py
-       :language: python
-       :linenos:
-
-
-Environment Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The BSM (Boto Session Manager) enum provides lazy-loaded AWS session objects:
+One boto session per environment, named after it. The unit tests switch them to a moto mock, so they need no AWS account.
 
 .. dropdown:: bsm_enum.py
 
@@ -97,9 +94,9 @@ The BSM (Boto Session Manager) enum provides lazy-loaded AWS session objects:
        :linenos:
 
 
-Stack Context Enumeration
+Layer 1: Stack Contexts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :class:`~cdk_mate.tests.stack_ctx_enum.StackCtxEnum` class provides lightweight stack configuration objects:
+:meth:`StackCtx.new <cdk_mate.stack_ctx.StackCtx.new>` derives the construct id and the CloudFormation stack name from one name, and the account and region from the boto session.
 
 .. dropdown:: stack_ctx_enum.py
 
@@ -108,10 +105,8 @@ The :class:`~cdk_mate.tests.stack_ctx_enum.StackCtxEnum` class provides lightwei
        :linenos:
 
 
-Stack Initialization
+Layer 2: Stacks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The stack initialization module creates CDK stack instances using the context objects:
-
 .. dropdown:: stack_enum.py
 
     .. literalinclude:: ../../../cdk_mate/tests/stack_enum.py
@@ -119,43 +114,47 @@ The stack initialization module creates CDK stack instances using the context ob
        :linenos:
 
 
-Deployment Options
+Stack Definitions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Each stack is a class in ``iac_define.py`` that mixes in one class per group of resources, each in its own ``iac_define_NN_<topic>.py`` file, so a large stack stays split into small files. Its ``__init__`` stores its own arguments and calls one ``create_*`` method per mixin.
+
+.. dropdown:: stacks/stack1/iac_define.py
+
+    .. literalinclude:: ../../../cdk_mate/tests/stacks/stack1/iac_define.py
+       :language: python
+       :linenos:
+
+.. dropdown:: stacks/stack1/iac_define_01_alerts.py
+
+    .. literalinclude:: ../../../cdk_mate/tests/stacks/stack1/iac_define_01_alerts.py
+       :language: python
+       :linenos:
+
+.. dropdown:: stacks/stack2/iac_define.py
+
+    .. literalinclude:: ../../../cdk_mate/tests/stacks/stack2/iac_define.py
+       :language: python
+       :linenos:
+
+.. dropdown:: stacks/stack2/iac_define_01_publisher.py
+
+    .. literalinclude:: ../../../cdk_mate/tests/stacks/stack2/iac_define_01_publisher.py
+       :language: python
+       :linenos:
+
+
+Deploying
 ------------------------------------------------------------------------------
-This pattern supports two deployment approaches:
+Each folder in ``cdk/`` has a ``cdk.json``, whose ``app`` runs an app script with the project's Python, and a deploy script that runs the CDK CLI through cdk_mate. The deploy scripts pass ``dir_cdk=__file__``, so they run from any working directory:
+
+.. code-block:: bash
+
+    python /path/to/cdk/deploy.py
 
 
-1. Single Stack, Multiple Environments
+All Stacks, One Environment at a Time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use stack-specific deployment scripts to deploy a single stack to one or more environments:
-
-.. dropdown:: cdk.json
-
-    .. literalinclude:: ../../../cdk/stack1/cdk.json
-       :language: javascript
-       :linenos:
-
-.. dropdown:: stack1_app.py
-
-    .. literalinclude:: ../../../cdk/stack1/stack1_app.py
-       :language: python
-       :linenos:
-
-.. dropdown:: stack1_deploy.py
-
-    .. literalinclude:: ../../../cdk/stack1/stack1_deploy.py
-       :language: python
-       :linenos:
-
-
-2. Multiple Stacks, Same Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Deploy multiple stacks to the same environment:
-
-.. dropdown:: cdk.json
-
-    .. literalinclude:: ../../../cdk/cdk.json
-       :language: javascript
-       :linenos:
+``app.py`` creates every stack. ``deploy.py`` keeps one list of stack contexts per environment and runs one ``cdk`` command per list with :func:`~cdk_mate.stack_ctx.cdk_deploy_many` and its siblings, using the credentials of that environment.
 
 .. dropdown:: app.py
 
@@ -170,9 +169,37 @@ Deploy multiple stacks to the same environment:
        :linenos:
 
 
+One Stack, All Environments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A folder per stack keeps a short feedback loop while you work on that stack. Its app script names only that stack, and the deploy script calls the ``cdk_*`` methods of its stack contexts; uncomment the step you want.
+
+.. dropdown:: stack2/stack2_app.py
+
+    .. literalinclude:: ../../../cdk/stack2/stack2_app.py
+       :language: python
+       :linenos:
+
+.. dropdown:: stack2/stack2_deploy.py
+
+    .. literalinclude:: ../../../cdk/stack2/stack2_deploy.py
+       :language: python
+       :linenos:
+
+
+Order of Dependent Stacks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The CDK CLI orders dependent stacks itself:
+
+- ``cdk deploy`` of Stack2 also deploys Stack1 first, since Stack2 needs it; pass ``exclusively=True`` to deploy Stack2 only.
+- ``cdk destroy`` of Stack1 also destroys Stack2 first, since Stack2 imports from it; with ``exclusively=True`` it fails while Stack2 exists.
+- A list of stacks in one command, such as ``cdk_deploy_many([stack2_dev, stack1_dev])``, runs in dependency order whatever the order of the list. ``deploy.py`` still writes its lists in creation and deletion order, so the order is visible.
+
+Run a list of stacks with the credentials of one environment: :func:`~cdk_mate.stack_ctx.cdk_deploy_many` uses the boto session of the first stack, and logs a warning when the list spans accounts or regions. :ref:`build-cdk-commands` shows the exact command line each method and function runs.
+
+
 Testing
 ------------------------------------------------------------------------------
-The pattern includes a testing approach that synthesizes stacks without deployment (`tests/test_stack_ctx.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_ctx.py>`_). It runs under a moto mock (`cdk_mate/tests/mock_aws.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/mock_aws.py>`_), so it needs no AWS account, only ``node`` for aws-cdk-lib:
+``TestStackCtxSynth`` in `tests/test_stack_ctx.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_ctx.py>`_ creates every stack in a fresh ``cdk.App`` under a moto mock and synthesizes it, so it needs no AWS account, only ``node`` for aws-cdk-lib. It checks the per-environment log level, and that Stack2 depends on and imports from Stack1.
 
 .. dropdown:: test_stack_ctx.py
 
@@ -181,114 +208,21 @@ The pattern includes a testing approach that synthesizes stacks without deployme
        :pyobject: TestStackCtxSynth
 
 
-Usage Guide
+Adding to the Project
 ------------------------------------------------------------------------------
 
 
-Setting Up New Stacks
+A New Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. **Define Stack Implementation**: Create a new module in the `stacks (cdk_mate/tests/stacks) <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests/stacks>`_ module to implement your CDK stack.
-2. **Add Stack Context**: Add new stack context entries to the `stack_ctx_enum.py (cdk_mate/tests/stack_ctx_enum.py) <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_ctx_enum.py>`_ module for each environment.
-3. **Update Initialization**: Add the new stack to the `stack_enum.py module (cdk_mate/tests/stack_enum.py) <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_enum.py>`_ module.
-4. **Create Deployment Scripts**: Add deployment scripts for the new stack in `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_.
+1. Add a boto session to ``BsmEnum`` in ``bsm_enum.py``, named after the environment, such as ``prod``.
+2. Add a ``<stack>_prod`` entry for each stack to ``stack_ctx_enum.py`` and to ``stack_enum.py``, passing that environment's arguments.
+3. Add the new entries to the app scripts and to a new list in the deploy scripts.
 
 
-Deployment Workflows
+A New Stack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-Individual Stack Development
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-First ensure that you enabled the stack you want to deploy in the ``xyz_app.py`` script like this:
-
-.. dropdown:: stack1_app.py
-
-    .. literalinclude:: ../../../cdk/stack1/stack1_app.py
-       :language: python
-       :linenos:
-
-When working on a specific stack, use the stack-specific deployment script ``xyz_deploy.py``, comment in and out the right line like this:
-
-.. dropdown:: stack1_deploy.py
-
-    .. literalinclude:: ../../../cdk/stack1/stack1_deploy.py
-       :language: python
-       :linenos:
-
-Then run the deployment script from the command line:
-
-.. code-block:: bash
-
-    # you don't have to cd to it
-    python /path/to/cdk/stack1/stack1_deploy.py
-
-
-Environment Deployment
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-To deploy all stacks for a specific environment:
-
-.. code-block:: bash
-
-    # you don't have to cd to it
-    python /path/to/cdk/deploy.py
-
-
-Developer Workflow Guide
-------------------------------------------------------------------------------
-This guide provides step-by-step instructions for common development workflows when working with the Multi-Stack Multi-Environment pattern.
-
-
-Adding a New AWS Account or Region
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-When you need to deploy resources to a new AWS account or region:
-
-1. Open the `bsm_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/bsm_enum.py>`_.
-2. Add a new boto session entry to the ``BsmEnum`` class.
-3. Follow the existing naming conventions (e.g., dev, test, prod)
-
-
-Creating a New CloudFormation Stack
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Follow these steps to implement and deploy a new CloudFormation stack:
-
-1. Create stack implementation:
-    - Create a new subfolder in the `stacks <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests/stacks>`_ directory
-    - Use the `stack1 <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk_mate/tests/stacks/stack1>`_ folder as a template
-    - Implement your CloudFormation resources following the established pattern
-2. Define stack contexts:
-    - Open `stack_ctx_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_ctx_enum.py>`_
-    - Add new ``StackCtx`` objects for each environment (e.g., dev, test, prod)
-3. Register stack instances:
-    - Open `stack_enum.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk_mate/tests/stack_enum.py>`_
-    - Add your new stack instances to the enum
-4. Test your stack:
-    - Update ``TestStackCtxSynth`` in `test_stack_ctx.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/tests/test_stack_ctx.py>`_
-    - Add and run tests for your new stack to verify it synthesizes correctly
-5. Set up deployment scripts:
-    - Option 1: Create a dedicated subfolder in the `cdk <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/cdk>`_ directory for your stack
-    - Option 2: Update the existing `app.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/app.py>`_ and `deploy.py <https://github.com/MacHu-GWU/cdk_mate-project/blob/main/cdk/deploy.py>`_ files to include your stack
-
-
-Updating an Existing CloudFormation Stack
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To update an existing stack, follow these key steps:
-
-1. Modify the stack implementation in its respective folder under ``stacks``
-2. Verify your changes with ``TestStackCtxSynth`` in ``tests/test_stack_ctx.py``
-3. Update the deployment scripts in the ``cdk`` folder as needed
-
-This process allows you to make incremental changes while maintaining the overall deployment structure.
-
-
-Best Practices
-------------------------------------------------------------------------------
-1. **Keep Stack Implementation Clean**: Focus on the CDK resources in stack implementation modules.
-2. **Use Context Objects**: Always use the context objects for stack configuration.
-3. **Lazy Loading**: Use lazy loading for AWS sessions to improve performance.
-4. **Deployment Automation**: Use the deployment utilities instead of raw CDK CLI commands.
-5. **Testing**: Always include tests that synthesize stacks before deployment.
-
-
-Conclusion
-------------------------------------------------------------------------------
-The Multi-Stack, Multi-Environment CDK Deployment Pattern provides a scalable and flexible approach to managing complex infrastructure as code across multiple environments. By separating stack implementation from deployment configuration and providing reusable utilities, this pattern enables teams to efficiently manage infrastructure at scale.
+1. Create ``stacks/<stack>/`` with an ``iac_define.py`` class and one mixin per group of resources, following ``stack1``. Take the stack's own settings and the resources of other stacks as explicit ``__init__`` arguments.
+2. Add one entry per environment to ``stack_ctx_enum.py``.
+3. Add one entry per environment to ``stack_enum.py``, passing those arguments, with ``self.<other stack>_<environment>.<resource>`` for a dependency.
+4. Add the stack to ``TestStackCtxSynth`` and run the tests.
+5. Add the entries to ``cdk/app.py`` and ``cdk/deploy.py``, or give the stack its own folder in ``cdk/`` like ``stack1``.
