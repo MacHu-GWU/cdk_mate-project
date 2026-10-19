@@ -15,6 +15,13 @@ x.y.z (Backlog)
 **Miscellaneous**
 
 
+1.0.1 (2026-10-19)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Minor Improvements**
+
+- Drop the direct dependency on ``constructs`` (was ``>=10.0.0,<11.0.0``). ``cdk_mate`` never imports it; ``aws-cdk-lib`` still installs it and now alone decides its version, so a future ``aws-cdk-lib`` 2.x that needs a newer ``constructs`` is never blocked by ``cdk_mate``.
+
+
 1.0.0 (2026-10-19)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **💥Breaking Changes**
