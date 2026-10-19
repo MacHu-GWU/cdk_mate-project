@@ -15,7 +15,9 @@ authors = [
 maintainers = [
     { name = "Sanhe Hu", email = "husanhe@gmail.com" },
 ]
-keywords = []
+keywords = [
+    "aws", "cdk", "cloudformation", "iac", "deployment",
+]
 readme = "README.rst"
 requires-python = ">=3.11,<4.0"
 # Read: https://pypi.org/classifiers/

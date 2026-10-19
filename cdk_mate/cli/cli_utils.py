@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import typing as T
 import os
+import shlex
 import logging
 import subprocess
 from pathlib import Path
@@ -256,7 +257,8 @@ def run_cmd(
     :raises subprocess.CalledProcessError: If the command exits with a non-zero code
     """
     logger.info("--- Run command ---")
-    logger.info(" ".join(args))
+    # shlex.join quotes arguments with spaces, so the line can be copied and run
+    logger.info(shlex.join(args))
     return subprocess.run(args, check=True, cwd=cwd, env=env)
 
 

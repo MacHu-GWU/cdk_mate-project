@@ -67,7 +67,19 @@ class StackCtx(BaseModel):
         bsm: BotoSesManager,
     ) -> T_KWARGS:
         """
-        Create a new StackCtx instance.
+        Build the keyword arguments of a :class:`StackCtx` from one name and a
+        boto session, without creating it.
+
+        ``construct_id`` is ``stack_name`` in CamelCase (:func:`~cdk_mate.utils.to_camel`),
+        ``stack_name`` is its slug (:func:`~cdk_mate.utils.to_slug`), and the
+        account and region come from ``bsm``. Override this classmethod in a
+        subclass to change the naming, or add fields to the returned dict.
+
+        :param stack_name: The name of the stack, such as ``"my-app-dev"``
+        :param bsm: The boto session that deploys the stack; reading its
+            account id makes one ``sts:GetCallerIdentity`` call
+
+        :returns: The keyword arguments of :class:`StackCtx`
         """
         return {
             "construct_id": to_camel(stack_name),
@@ -82,9 +94,13 @@ class StackCtx(BaseModel):
         cls,
         stack_name: str,
         bsm: BotoSesManager,
-    ):
+    ) -> T.Self:
         """
-        Create a new StackCtx instance.
+        Create a new StackCtx instance from one name and a boto session, with
+        the keyword arguments of :meth:`make_stack_ctx_kwargs`.
+
+        :param stack_name: The name of the stack, such as ``"my-app-dev"``
+        :param bsm: The boto session that deploys the stack
         """
         return cls(
             **cls.make_stack_ctx_kwargs(
@@ -266,6 +282,10 @@ def _get_bsm_for_many(
     accounts or regions are allowed, because the CDK CLI can deploy them when
     those accounts trust this one (``cdk bootstrap --trust``), but a warning is
     printed, since a mixed list is more often a mistake.
+
+    When the first stack has no ``bsm``, this returns ``None``, and the command
+    runs with the default credentials of the environment, as
+    :meth:`StackCtx.cdk_deploy` and its siblings do for a stack without ``bsm``.
 
     :raises ValueError: If ``stack_ctx_list`` is empty
     """

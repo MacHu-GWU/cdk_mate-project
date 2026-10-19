@@ -206,6 +206,13 @@ def test_run_cmd():
         run_cmd(["invalid-command"])
 
 
+def test_run_cmd_logs_a_runnable_line(capsys: pytest.CaptureFixture):
+    # an argument with a space is quoted, so the logged line can be copied and run
+    run_cmd([sys.executable, "-c", "print('a b')"])
+    out = capsys.readouterr().out
+    assert "-c 'print('\"'\"'a b'\"'\"')'" in out
+
+
 def test_run_cmd_cwd_and_env(tmp_path: Path):
     path_out = tmp_path / "out.json"
     env = {**os.environ, "AWS_REGION": "eu-west-1"}
