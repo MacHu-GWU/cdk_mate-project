@@ -89,7 +89,7 @@ x.y.z (Backlog)
 - Add the docs page "Build CDK Commands", a notebook that builds command lines with the command classes, ``StackCtx`` and ``build_cmd`` and shows each real output; it needs no AWS account.
 - Rewrite "Multi Stack Multi Environment Best Practices" around the two layers and why they pay off, and drop its references to files that no longer exist.
 - "CDK CLI in Python" documents how options reach the CLI (unset options, ``False``, ``extra_args``, ``cdk_cmd``, and the CDK CLI ignoring unknown options), and its examples use working imports and options. Fix the API paths in "Public APIs".
-- Add a ``cdk_mate`` Claude skill (``.claude/skills/cdk_mate/``) that documents the public API, the command classes and the best practices for AI coding agents.
+- Add the ``pypi-cdk_mate`` Claude skill (``.claude/skills/pypi-cdk_mate/``), which documents the public API, the command classes and the best practices for AI coding agents; the README explains how to install it.
 
 
 0.1.6 (2025-05-06)

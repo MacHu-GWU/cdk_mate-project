@@ -1,9 +1,11 @@
 ---
-name: cdk_mate
-description: "cdk_mate (v1.0.0): run the AWS CDK CLI from Python with explicit boto sessions, and organize multi-stack, multi-environment CDK projects. Public API: StackCtx, build_cmd, cdk_synth_many, cdk_diff_many, cdk_deploy_many, cdk_destroy_many, to_camel, to_slug, and cli.<Command> dataclasses (Deploy, Diff, Synth, Destroy, Bootstrap, ...). Use when code imports cdk_mate, mentions StackCtx or stack_ctx_enum / stack_enum, or needs to synth/diff/deploy/destroy CDK stacks from Python across AWS accounts."
+name: pypi-cdk_mate
+description: "cdk_mate (v1.0.0, valid for cdk_mate >=1.0.0,<2.0.0): run the AWS CDK CLI from Python with explicit boto sessions, and organize multi-stack, multi-environment CDK projects. Public API: StackCtx, build_cmd, cdk_synth_many, cdk_diff_many, cdk_deploy_many, cdk_destroy_many, to_camel, to_slug, and cli.<Command> dataclasses (Deploy, Diff, Synth, Destroy, Bootstrap, ...). Use when code imports cdk_mate, mentions StackCtx or stack_ctx_enum / stack_enum, or needs to synth/diff/deploy/destroy CDK stacks from Python across AWS accounts."
 ---
 
 # cdk_mate 1.0.0
+
+**Version scope:** written for cdk_mate 1.0.0 and valid for every 1.x release (`>=1.0.0,<2.0.0`): semantic versioning keeps the public API below backward compatible within 1.x, though a later 1.x may add commands or options not listed here. Check the installed version with `importlib.metadata.version("cdk_mate")`. On 0.x, this skill does not apply (no `build_cmd`, `cdk_synth_many`, `cdk_cmd`, `extra_args`, and `False` / `0` options were not passed); read that version's source instead. On 2.0 or newer, treat this skill as possibly outdated and check the release history.
 
 Three pieces: (1) **CDK CLI in Python**: one dataclass per `cdk` command, one field per option; `.to_args()` builds the command line, `.run(bsm=..., dir_cdk=...)` runs it with the credentials of a `boto_session_manager.BotoSesManager` and in the folder of `cdk.json`, without touching your own `os.environ` or cwd. (2) **`StackCtx`**: one stack in one environment (construct id, stack name, account, region, bsm), with `cdk_*` methods and `cdk_*_many` functions. (3) **Best practice** for many stacks × many environments: `bsm_enum` → `stack_ctx_enum` (layer 1) → `stack_enum` (layer 2). Python 3.11+.
 

@@ -69,3 +69,14 @@ To upgrade to latest version:
 .. code-block:: console
 
     $ pip install --upgrade cdk-mate
+
+
+Claude Skill
+------------------------------------------------------------------------------
+
+This repo ships a Claude skill, `pypi-cdk_mate <https://github.com/MacHu-GWU/cdk_mate-project/tree/main/.claude/skills/pypi-cdk_mate>`_, that teaches AI coding agents such as Claude Code the public API of ``cdk_mate`` 1.x, its command classes, and the multi stack, multi environment best practices. To use it in all your projects, copy the folder into your personal skills directory:
+
+.. code-block:: console
+
+    $ git clone --depth 1 https://github.com/MacHu-GWU/cdk_mate-project.git
+    $ cp -r cdk_mate-project/.claude/skills/pypi-cdk_mate ~/.claude/skills/
